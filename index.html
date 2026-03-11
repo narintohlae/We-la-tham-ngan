@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking - Smart Kiosk</title>
+    <title>Time Tracking - Secure Kiosk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -89,13 +89,8 @@
             display: none;
         }
 
-        /* PIN Dots Indicator (แทนที่ช่อง Input) */
-        .pin-display {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0 30px 0;
-        }
+        /* PIN Dots Indicator */
+        .pin-display { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
         .pin-dot {
             width: 18px;
             height: 18px;
@@ -104,58 +99,38 @@
             background-color: transparent;
             transition: all 0.2s ease;
         }
-        .pin-dot.filled {
-            background-color: var(--primary);
-            border-color: var(--primary);
-            transform: scale(1.1);
-        }
+        .pin-dot.filled { background-color: var(--primary); border-color: var(--primary); transform: scale(1.1); }
+        .pin-dot.success { background-color: var(--success); border-color: var(--success); }
 
         /* Numpad */
-        .numpad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            max-width: 280px;
-            margin: 0 auto 30px auto;
-        }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; margin: 0 auto 30px auto; }
         .num-btn {
-            background-color: #f9fafb;
-            border: 1px solid var(--border-light);
-            border-radius: 16px;
-            padding: 18px 0;
-            font-size: 1.5em;
-            font-weight: 500;
-            font-family: 'Prompt', sans-serif;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: all 0.1s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: #f9fafb; border: 1px solid var(--border-light); border-radius: 16px; padding: 18px 0;
+            font-size: 1.5em; font-weight: 500; font-family: 'Prompt', sans-serif; color: var(--text-main);
+            cursor: pointer; transition: all 0.1s ease; display: flex; align-items: center; justify-content: center;
         }
         .num-btn:active { background-color: var(--border-light); transform: scale(0.95); }
         .num-btn-del { color: var(--danger); background-color: #fee2e2; border-color: #fca5a5; }
+        .num-btn:disabled { opacity: 0.5; cursor: not-allowed; } /* ปิดปุ่มตอนรหัสถูกแล้ว */
 
-        /* Action Buttons */
+        /* Action Buttons (ถูกซ่อนไว้ตอนแรก) */
         .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
-        input { font-family: 'Prompt', sans-serif; padding: 12px; font-size: 1em; border: 1px solid var(--border-light); border-radius: 8px; flex: 1; min-width: 150px; background-color: #f9fafb; outline: none; }
+        #action-buttons {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        #action-buttons.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            display: none !important;
+        }
         
         .action-btn {
-            padding: 18px 30px;
-            font-size: 1.1em;
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            color: white;
-            font-weight: 500;
-            transition: all 0.2s;
-            font-family: 'Prompt', sans-serif;
-            flex: 1;
-            max-width: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            padding: 18px 30px; font-size: 1.1em; border: none; border-radius: 16px; cursor: pointer; color: white;
+            font-weight: 500; transition: all 0.2s; font-family: 'Prompt', sans-serif; flex: 1; max-width: 200px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .btn-in { background-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
         .btn-in:hover { background-color: var(--success-hover); transform: translateY(-2px); }
@@ -170,6 +145,7 @@
         /* Admin Tables */
         .admin-section { border: 1px solid var(--border-light); padding: 25px; border-radius: 16px; margin-bottom: 24px; background: #fff; }
         .filters { display: flex; gap: 10px; background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--border-light);}
+        input[type="text"], input[type="password"], input[type="date"] { font-family: 'Prompt', sans-serif; padding: 12px; font-size: 1em; border: 1px solid var(--border-light); border-radius: 8px; flex: 1; min-width: 150px; background-color: #f9fafb; outline: none; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; font-size: 0.95em; }
         th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid var(--border-light); }
         th { color: var(--text-muted); font-weight: 500; font-size: 0.9em; text-transform: uppercase; border-bottom: 2px solid var(--border-light); }
@@ -177,7 +153,7 @@
         .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
         .status-in { background-color: #fef3c7; color: #d97706; }
         .status-out { background-color: #d1fae5; color: #059669; }
-
+        
         .hidden { display: none !important; }
         .divider { height: 1px; background-color: var(--border-light); margin: 30px 0; }
     </style>
@@ -211,7 +187,7 @@
                 <div class="pin-dot" id="dot-4"></div>
             </div>
 
-            <div class="numpad">
+            <div class="numpad" id="numpad">
                 <button class="num-btn" onclick="pressNum('1')">1</button>
                 <button class="num-btn" onclick="pressNum('2')">2</button>
                 <button class="num-btn" onclick="pressNum('3')">3</button>
@@ -228,7 +204,7 @@
                 </button>
             </div>
 
-            <div class="input-group">
+            <div class="input-group hidden" id="action-buttons">
                 <button class="action-btn btn-in" onclick="handleClock('in')">
                     <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                     เข้างาน
@@ -293,6 +269,7 @@
     
     // ตัวแปรเก็บรหัส PIN ที่กำลังกด
     let currentPinCode = "";
+    let isPinVerified = false;
 
     function saveData() {
         localStorage.setItem('timeRecords_v2', JSON.stringify(records));
@@ -325,56 +302,98 @@
 
     function selectEmployee(name) {
         document.getElementById('empName').value = name;
-        
-        // เคลียร์สีปุ่มเดิม และใส่สีปุ่มใหม่
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-emp-${name}`).classList.add('active');
-        
-        // เปลี่ยนข้อความให้ระบุชื่อ
         document.getElementById('selected-emp-text').innerText = `ใส่รหัส PIN ของคุณ: ${name}`;
         
-        // เคลียร์รหัสที่พิมพ์ค้างไว้และจุดไข่ปลา
-        clearNum();
-        
-        // แสดง Step 2 (Numpad + Buttons)
+        clearNum(); // รีเซ็ตทุกอย่าง
         document.getElementById('step2-container').classList.remove('hidden-step');
+        
+        // เลื่อนหน้าจอลงมานิดนึงให้เห็น Numpad ชัดๆ (เผื่อหน้าจอมือถือเล็ก)
+        setTimeout(() => {
+            document.getElementById('step2-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
     }
 
     renderEmployeeButtons();
 
-    // ================= ระบบแป้นพิมพ์ & จุดไข่ปลา =================
-    function updatePinDots() {
+    // ================= ระบบแป้นพิมพ์ & การตรวจสอบรหัส =================
+    function updatePinDots(isSuccess = false) {
         for (let i = 1; i <= 4; i++) {
             const dot = document.getElementById(`dot-${i}`);
+            dot.classList.remove('filled', 'success'); // ล้างสถานะเก่าออกก่อน
+            
             if (i <= currentPinCode.length) {
-                dot.classList.add('filled');
-            } else {
-                dot.classList.remove('filled');
+                if (isSuccess) {
+                    dot.classList.add('success'); // ถ้ารหัสถูก ให้จุดไข่ปลาเป็นสีเขียว
+                } else {
+                    dot.classList.add('filled');
+                }
             }
         }
     }
 
     function pressNum(num) {
-        if (currentPinCode.length < 4) {
-            currentPinCode += num;
-            updatePinDots();
+        // ถ้ายืนยันรหัสถูกไปแล้ว จะกดเลขเพิ่มไม่ได้
+        if (isPinVerified || currentPinCode.length >= 4) return;
+
+        currentPinCode += num;
+        updatePinDots();
+
+        // เมื่อพิมพ์ครบ 4 ตัว ให้ตรวจรหัสทันที
+        if (currentPinCode.length === 4) {
+            verifyPin();
         }
     }
 
     function deleteNum() {
-        if (currentPinCode.length > 0) {
-            currentPinCode = currentPinCode.slice(0, -1);
-            updatePinDots();
-        }
+        if (isPinVerified || currentPinCode.length === 0) return;
+        currentPinCode = currentPinCode.slice(0, -1);
+        updatePinDots();
     }
 
     function clearNum() {
         currentPinCode = "";
+        isPinVerified = false;
         updatePinDots();
+        
+        // ปิดปุ่ม เข้า/ออกงาน
+        document.getElementById('action-buttons').classList.add('hidden');
+        
+        // เปิดการใช้งาน Numpad คืน
+        document.querySelectorAll('.num-btn').forEach(btn => btn.disabled = false);
+        document.getElementById('selected-emp-text').innerText = `ใส่รหัส PIN ของคุณ: ${document.getElementById('empName').value}`;
+        document.getElementById('selected-emp-text').style.color = "var(--primary)";
+    }
+
+    function verifyPin() {
+        const name = document.getElementById('empName').value;
+        const validEmp = employees.find(e => e.name === name && e.pin === currentPinCode);
+
+        // ใส่ delay เล็กน้อยเพื่อให้ระบบวาดจุดที่ 4 ให้เสร็จก่อนเตือน
+        setTimeout(() => {
+            if (validEmp) {
+                // กรณี: รหัสถูกต้อง
+                isPinVerified = true;
+                updatePinDots(true); // เปลี่ยนจุดไข่ปลาเป็นสีเขียว
+                
+                document.getElementById('selected-emp-text').innerText = "✅ รหัสถูกต้อง กรุณาเลือกรายการ";
+                document.getElementById('selected-emp-text').style.color = "var(--success)";
+                
+                // โชว์ปุ่ม เข้า/ออก งาน
+                document.getElementById('action-buttons').classList.remove('hidden');
+                
+                // ล็อก Numpad กันคนกดมั่ว
+                document.querySelectorAll('.num-btn').forEach(btn => btn.disabled = true);
+            } else {
+                // กรณี: รหัสผิด
+                alert('❌ รหัส PIN ไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง');
+                clearNum();
+            }
+        }, 150); 
     }
 
     function resetToHome() {
-        // ซ่อน Step 2 และเคลียร์ทุกอย่างกลับหน้าเริ่มต้น
         document.getElementById('step2-container').classList.add('hidden-step');
         document.getElementById('empName').value = ''; 
         clearNum();  
@@ -384,34 +403,25 @@
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
         const name = document.getElementById('empName').value;
-        const pin = currentPinCode; // ใช้รหัสจากตัวแปร ไม่ใช่ input box แล้ว
-
-        if (!name) return alert('กรุณาเลือกชื่อของคุณก่อนครับ');
-        if (pin.length !== 4) return alert('กรุณาใส่รหัส PIN ให้ครบ 4 หลักครับ');
-
-        const validEmp = employees.find(e => e.name === name && e.pin === pin);
-        if (!validEmp) {
-            clearNum(); 
-            return alert('รหัส PIN ไม่ถูกต้อง!');
-        }
-
+        
+        // ไม่ต้องเช็ค PIN ซ้ำแล้ว เพราะปุ่มนี้จะโผล่มาเฉพาะตอน PIN ถูกต้องเท่านั้น
         const activeRecordIndex = records.findIndex(r => r.name === name && !r.timeOut);
         const now = new Date().toISOString();
 
         if (type === 'in') {
             if (activeRecordIndex > -1) {
                 resetToHome();
-                return alert('คุณได้บันทึกเข้างานไปแล้วครับ');
+                return alert(`คุณ ${name} ได้บันทึกเข้างานไปแล้วครับ`);
             }
             records.push({ id: Date.now(), name: name, timeIn: now, timeOut: null });
-            alert(`เข้างานสำเร็จ: ${name}`);
+            alert(`✅ บันทึกเวลาเข้างานสำเร็จ: ${name}`);
         } else if (type === 'out') {
             if (activeRecordIndex === -1) {
                 resetToHome();
-                return alert('ยังไม่ได้บันทึกเข้างานครับ');
+                return alert(`ไม่พบประวัติการเข้างานของคุณ ${name} ครับ`);
             }
             records[activeRecordIndex].timeOut = now;
-            alert(`ออกงานสำเร็จ: ${name}`);
+            alert(`✅ บันทึกเวลาออกงานสำเร็จ: ${name}`);
         }
 
         saveData();
