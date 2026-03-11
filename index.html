@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Time Tracking - Fixed</title>
+    <title>Work Log - Cloud Firestore</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -29,9 +29,9 @@
 <div class="container">
     <div id="page-login" class="page active">
         <h1>Cloud Login</h1>
-        <p class="subtitle">ระบุ PIN (1234, 5678, 9999)</p>
-        <input type="password" id="login-pin" class="input-field" placeholder="PIN" maxlength="4">
-        <button class="btn btn-main" onclick="handleLogin()">Sign In</button>
+        <p class="subtitle">ระบบบันทึกเวลา (Firestore)</p>
+        <input type="password" id="login-pin" class="input-field" placeholder="กรอก PIN" maxlength="4">
+        <button class="btn btn-main" onclick="handleLogin()">เข้าสู่ระบบ</button>
     </div>
 
     <div id="page-dashboard" class="page">
@@ -46,15 +46,13 @@
     </div>
 
     <div id="page-admin" class="page">
-        <h1>Admin Panel</h1>
-        <button class="btn btn-main" style="background: #1d6f42;" onclick="exportFromFirebase()">📊 Export Excel</button>
+        <h1>Admin Control</h1>
+        <button class="btn btn-main" style="background: #1d6f42;" onclick="exportFromFirestore()">📊 Export to Excel</button>
         <button class="logout-link" onclick="logout()">Back</button>
     </div>
 </div>
 
 <script>
-    // 🚩 ตรวจสอบ URL นี้ใน Firebase Console หน้า Realtime Database 
-    // ถ้า URL ของคุณไม่ใช่ภูมิภาค US (เช่นเป็น asia-southeast1) ต้องใช้ URL เต็ม
     const firebaseConfig = {
       apiKey: "AIzaSyD-RzkBZ3lXFodonqoMFIrpuCwQ4JPr71g",
       authDomain: "we-la-tham-ngan.firebaseapp.com",
@@ -62,19 +60,14 @@
       storageBucket: "we-la-tham-ngan.firebasestorage.app",
       messagingSenderId: "321115203647",
       appId: "1:321115203647:web:9d8d11ed78c4e949e3b08a",
-      measurementId: "G-71P7D9NKJK",
-      // ปรับ URL ให้ตรงตามที่ Firebase มักจะสร้างให้โปรเจกต์ใหม่ในโซนเอเชีย
-      databaseURL: "https://we-la-tham-ngan-default-rtdb.asia-southeast1.firebasedatabase.app"
+      measurementId: "G-71P7D9NKJK"
     };
 
-    try {
-        firebase.initializeApp(firebaseConfig);
-        console.log("Firebase Initialized");
-    } catch (e) {
-        alert("Firebase Config Error: " + e.message);
-    }
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    // Initialize Firestore
+    const db = firebase.firestore();
 
-    const db = firebase.database();
     const USERS = { "1234": "Jantra", "5678": "Panwasa", "9999": "Admin" };
     let currentUser = null;
 
@@ -84,32 +77,63 @@
             currentUser = USERS[pin];
             document.getElementById('login-pin').value = '';
             showPage(currentUser === 'Admin' ? 'page-admin' : 'page-dashboard');
-            if(currentUser !== 'Admin') document.getElementById('welcome-text').innerText = "Hello, " + currentUser;
+            if(currentUser !== 'Admin') document.getElementById('welcome-text').innerText = "สวัสดี, " + currentUser;
         } else {
             alert('PIN ไม่ถูกต้อง');
         }
     }
 
     function record(type) {
+        let note = "-";
+        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
+        if (type === 'โอที') note = confirm("กด OK เพื่อเริ่มโอที / Cancel เพื่อจบโอที") ? "เริ่มโอที" : "จบโอที";
+
         const entry = {
             name: currentUser,
             type: type,
             date: new Date().toLocaleDateString('th-TH'),
             time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+            note: note,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() // ใช้ timestamp ของ Firestore
         };
 
-        console.log("Attempting to save:", entry);
-
-        // ทดสอบส่งข้อมูลและดัก Error
-        db.ref('attendance_logs').push(entry)
+        // บันทึกข้อมูลลงใน Collection ชื่อ "attendance_logs"
+        db.collection("attendance_logs").add(entry)
             .then(() => {
-                alert('บันทึกสำเร็จ!');
+                alert('บันทึกข้อมูลลง Firestore สำเร็จ!');
                 logout();
             })
             .catch((error) => {
-                console.error("Firebase Error:", error);
-                alert("เกิดข้อผิดพลาด: " + error.message + "\n\nกรุณาตรวจสอบหน้า Rules ใน Firebase Console");
+                console.error("Error adding document: ", error);
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            });
+    }
+
+    function exportFromFirestore() {
+        // ดึงข้อมูลทั้งหมดจาก Firestore เรียงตามเวลาล่าสุด
+        db.collection("attendance_logs").orderBy("timestamp", "desc").get()
+            .then((querySnapshot) => {
+                const logs = [];
+                querySnapshot.forEach((doc) => {
+                    const item = doc.data();
+                    logs.push({
+                        "ชื่อพนักงาน": item.name,
+                        "กิจกรรม": item.type,
+                        "วันที่": item.date,
+                        "เวลา": item.time,
+                        "หมายเหตุ": item.note
+                    });
+                });
+
+                if (logs.length === 0) return alert('ไม่มีข้อมูล');
+
+                const ws = XLSX.utils.json_to_sheet(logs);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+                XLSX.writeFile(wb, "Staff_Report_Firestore.xlsx");
+            })
+            .catch((error) => {
+                alert("Error fetching data: " + error.message);
             });
     }
 
@@ -119,18 +143,6 @@
     }
 
     function logout() { currentUser = null; showPage('page-login'); }
-
-    function exportFromFirebase() {
-        db.ref('attendance_logs').once('value').then((snapshot) => {
-            const data = snapshot.val();
-            if (!data) return alert('ไม่มีข้อมูล');
-            const logs = Object.values(data).reverse();
-            const ws = XLSX.utils.json_to_sheet(logs);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-            XLSX.writeFile(wb, "Report.xlsx");
-        });
-    }
 </script>
 </body>
 </html>
