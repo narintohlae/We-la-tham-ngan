@@ -3,225 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking System</title>
+    <title>Enterprise Time Tracking</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Chakra+Petch:wght@300;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #0f172a;
             --text-sub: #64748b;
-            --accent: #0f172a; /* Deep Dark */
             --border: #e2e8f0;
             --success: #10b981;
             --error: #ef4444;
-            --warning: #f59e0b;
-            --ot: #6366f1;
         }
 
-        * { box-sizing: border-box; transition: all 0.2s ease; }
         body { 
-            font-family: 'Inter', 'Chakra Petch', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-main);
-            margin: 0; padding: 40px 20px;
-            display: flex; justify-content: center;
+            font-family: 'Inter', sans-serif; background-color: var(--bg); 
+            margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
 
-        .app-container { width: 100%; max-width: 480px; }
-        header { text-align: center; margin-bottom: 32px; }
-        header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.025em; margin: 0; }
-        header p { color: var(--text-sub); font-size: 0.9rem; margin-top: 4px; }
+        .container { width: 100%; max-width: 400px; padding: 20px; }
 
-        .staff-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        /* การจัดการหน้าจอ (Hidden by default) */
+        .page { display: none; background: var(--card); padding: 32px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 8px; }
+        .subtitle { color: var(--text-sub); font-size: 0.85rem; text-align: center; margin-bottom: 24px; }
+
+        .input-field {
+            width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 1rem; text-align: center; background: #fdfdfd;
         }
 
-        .staff-info { display: flex; align-items: center; margin-bottom: 20px; }
-        .avatar { 
-            width: 40px; height: 40px; background: #f1f5f9; 
-            border-radius: 12px; display: flex; align-items: center; 
-            justify-content: center; font-weight: bold; color: var(--accent);
-            margin-right: 12px;
+        .btn {
+            width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600;
+            cursor: pointer; font-size: 0.9rem; transition: 0.2s;
+        }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-main:hover { opacity: 0.9; }
+        .btn-ghost { background: transparent; color: var(--text-sub); margin-top: 12px; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .action-btn { 
+            background: white; border: 1px solid var(--border); padding: 15px 10px; 
+            border-radius: 12px; font-size: 0.8rem; font-weight: 600;
+        }
+        .action-btn:hover { background: #f8fafc; border-color: var(--primary); }
+
+        .status-badge {
+            display: inline-block; padding: 4px 12px; border-radius: 20px; 
+            font-size: 0.75rem; font-weight: 600; margin-bottom: 16px;
         }
 
-        .pin-field {
-            width: 100%; background: #f8fafc; border: 1px solid var(--border);
-            padding: 12px; border-radius: 8px; text-align: center;
-            font-size: 1rem; letter-spacing: 4px; margin-bottom: 16px;
-        }
-        .pin-field:focus { outline: none; border-color: var(--accent); background: #fff; }
-
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button {
-            font-family: inherit; font-size: 0.85rem; font-weight: 500;
-            padding: 10px; border-radius: 8px; border: 1px solid var(--border);
-            background: #fff; cursor: pointer; color: var(--text-main);
-        }
-        button:hover { background: #f1f5f9; border-color: #cbd5e1; }
-        .btn-primary { background: var(--accent); color: #fff; border: none; }
-        .btn-primary:hover { background: #334155; }
-
-        .logs-section { margin-top: 40px; }
-        .logs-header { 
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
-        }
-        .logs-header h3 { font-size: 0.9rem; font-weight: 600; margin: 0; }
-
-        .log-item {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;
-        }
-        .log-user { font-weight: 600; display: block; }
-        .log-type { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #f1f5f9; margin-top: 4px; display: inline-block; }
-        .log-time { color: var(--text-sub); text-align: right; }
-        
-        .type-check-in { color: var(--success); }
-        .type-check-out { color: var(--error); }
-        .type-leave { color: var(--warning); }
-        .type-ot { color: var(--ot); }
-
-        .footer-tools { margin-top: 32px; display: flex; gap: 12px; }
-        .tool-link { 
-            font-size: 0.75rem; color: var(--text-sub); text-decoration: none; 
-            cursor: pointer; background: none; border: none; padding: 0;
-        }
-        .tool-link:hover { color: var(--accent); }
+        .footer-links { text-align: center; margin-top: 24px; }
+        .link { font-size: 0.75rem; color: var(--text-sub); cursor: pointer; text-decoration: underline; background: none; border: none; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <h1>Time Registration</h1>
-        <p id="current-date"></p>
-    </header>
-
-    <div class="staff-card">
-        <div class="staff-info">
-            <div class="avatar">J</div>
-            <div style="font-weight: 600;">Jantra</div>
+<div class="container">
+    
+    <div id="page-login" class="page active">
+        <h1>Welcome Back</h1>
+        <p class="subtitle">กรุณาระบุรหัสผ่านเพื่อเข้าใช้งาน</p>
+        <input type="password" id="login-pin" class="input-field" placeholder="Enter 4-digit PIN" maxlength="4">
+        <button class="btn btn-main" onclick="handleLogin()">Login</button>
+        <div class="footer-links" style="margin-top: 40px;">
+            <button class="link" onclick="exportToExcel()">Export Admin Report</button>
         </div>
-        <input type="password" id="pin-jantra" class="pin-field" placeholder="PIN" maxlength="4">
+    </div>
+
+    <div id="page-dashboard" class="page">
+        <div id="user-header">
+            <h1 id="welcome-text">User Dashboard</h1>
+            <p class="subtitle" id="date-text"></p>
+        </div>
+
         <div class="action-grid">
-            <button class="btn-primary" onclick="auth('jantra', 'เข้างาน', '1234', 'Jantra')">Check In</button>
-            <button onclick="auth('jantra', 'ออกงาน', '1234', 'Jantra')">Check Out</button>
-            <button onclick="auth('jantra', 'โอที', '1234', 'Jantra')">Overtime</button>
-            <button onclick="auth('jantra', 'ลา', '1234', 'Jantra')">Leave</button>
+            <button class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In</button>
+            <button class="action-btn" onclick="record('ออกงาน')" style="color: var(--error)">Check Out</button>
+            <button class="action-btn" onclick="record('โอที')" style="color: #6366f1">Overtime</button>
+            <button class="action-btn" onclick="record('ลา')" style="color: #f59e0b">Leave</button>
         </div>
+
+        <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
     </div>
 
-    <div class="staff-card">
-        <div class="staff-info">
-            <div class="avatar">P</div>
-            <div style="font-weight: 600;">Panwasa</div>
-        </div>
-        <input type="password" id="pin-panwasa" class="pin-field" placeholder="PIN" maxlength="4">
-        <div class="action-grid">
-            <button class="btn-primary" onclick="auth('panwasa', 'เข้างาน', '5678', 'Panwasa')">Check In</button>
-            <button onclick="auth('panwasa', 'ออกงาน', '5678', 'Panwasa')">Check Out</button>
-            <button onclick="auth('panwasa', 'โอที', '5678', 'Panwasa')">Overtime</button>
-            <button onclick="auth('panwasa', 'ลา', '5678', 'Panwasa')">Leave</button>
-        </div>
-    </div>
-
-    <section class="logs-section">
-        <div class="logs-header">
-            <h3>Recent Activity</h3>
-            <button class="tool-link" onclick="exportToExcel()">Export Excel</button>
-        </div>
-        <div id="log-list"></div>
-    </section>
-
-    <div class="footer-tools">
-        <button class="tool-link" onclick="clearData()">Clear History</button>
-    </div>
 </div>
 
 <script>
-    document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-GB', { 
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-    });
+    const users = {
+        "1234": "Jantra",
+        "5678": "Panwasa"
+    };
 
-    window.onload = renderLogs;
+    let currentUser = null;
 
-    function auth(id, type, pin, name) {
-        const input = document.getElementById('pin-' + id);
-        if (input.value === pin) {
-            let note = "-";
-            if (type === 'ลา') note = prompt("Reason for leave:") || "Not specified";
-            if (type === 'โอที') note = confirm("Start OT? (Cancel for End OT)") ? "Start OT" : "End OT";
-            
-            saveLog(name, type, note);
-            input.value = '';
+    function handleLogin() {
+        const pin = document.getElementById('login-pin').value;
+        if (users[pin]) {
+            currentUser = users[pin];
+            showPage('page-dashboard');
+            document.getElementById('welcome-text').innerText = `Hello, ${currentUser}`;
+            document.getElementById('date-text').innerText = new Date().toLocaleDateString('th-TH', { 
+                day: 'numeric', month: 'long', year: 'numeric' 
+            });
+            document.getElementById('login-pin').value = '';
         } else {
-            alert('Invalid PIN');
-            input.value = '';
+            alert('รหัสผ่านไม่ถูกต้อง');
+            document.getElementById('login-pin').value = '';
         }
     }
 
-    function saveLog(name, type, note) {
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    function record(type) {
+        let note = "-";
+        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุเหตุผล";
+        if (type === 'โอที') note = confirm("กด OK เพื่อเริ่มโอที / Cancel เพื่อจบโอที") ? "เริ่มโอที" : "จบโอที";
+
         const now = new Date();
         const entry = {
-            Name: name,
+            Name: currentUser,
             Type: type,
             Date: now.toLocaleDateString('th-TH'),
             Time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
             Note: note
         };
-        const logs = JSON.parse(localStorage.getItem('proLogs')) || [];
+
+        const logs = JSON.parse(localStorage.getItem('secureStaffLogs')) || [];
         logs.unshift(entry);
-        localStorage.setItem('proLogs', JSON.stringify(logs));
-        renderLogs();
+        localStorage.setItem('secureStaffLogs', JSON.stringify(logs));
+        
+        alert(`บันทึก ${type} สำเร็จ`);
+        logout(); // บันทึกเสร็จแล้วล็อกเอาท์อัตโนมัติเพื่อความปลอดภัย
     }
 
-    function renderLogs() {
-        const logs = JSON.parse(localStorage.getItem('proLogs')) || [];
-        const container = document.getElementById('log-list');
-        container.innerHTML = logs.length ? '' : '<p style="color:#94a3b8; font-size:0.8rem; text-align:center;">No recent activity</p>';
-
-        logs.slice(0, 10).forEach(log => {
-            const typeClass = log.Type === 'เข้างาน' ? 'type-check-in' : 
-                             log.Type === 'ออกงาน' ? 'type-check-out' : 
-                             log.Type === 'ลา' ? 'type-leave' : 'type-ot';
-            
-            container.innerHTML += `
-                <div class="log-item">
-                    <div>
-                        <span class="log-user">${log.Name}</span>
-                        <span class="log-type ${typeClass}">${log.Type}</span>
-                        ${log.Note !== '-' ? `<div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">• ${log.Note}</div>` : ''}
-                    </div>
-                    <div class="log-time">
-                        <div>${log.Time}</div>
-                        <div style="font-size:0.7rem; opacity:0.6;">${log.Date}</div>
-                    </div>
-                </div>
-            `;
-        });
+    function logout() {
+        currentUser = null;
+        showPage('page-login');
     }
 
     function exportToExcel() {
-        const logs = JSON.parse(localStorage.getItem('proLogs')) || [];
-        if (!logs.length) return alert('No data to export');
+        const adminPin = prompt("Enter Admin PIN to Export (1234):");
+        if(adminPin !== "1234") return alert("Unauthorized");
+
+        const logs = JSON.parse(localStorage.getItem('secureStaffLogs')) || [];
+        if (!logs.length) return alert('ไม่มีข้อมูล');
+        
         const ws = XLSX.utils.json_to_sheet(logs);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-        XLSX.writeFile(wb, "Attendance_Report.xlsx");
-    }
-
-    function clearData() {
-        if (confirm('Clear all history?')) {
-            localStorage.removeItem('proLogs');
-            renderLogs();
-        }
+        XLSX.utils.book_append_sheet(wb, ws, "StaffLogs");
+        XLSX.writeFile(wb, "Staff_Attendance_Report.xlsx");
     }
 </script>
 
