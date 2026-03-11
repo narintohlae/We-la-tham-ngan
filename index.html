@@ -12,6 +12,7 @@
             --light: #ecf0f1;
             --bg: #f4f7f6;
             --excel: #217346;
+            --active: #1976D2;
         }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -31,21 +32,54 @@
         h1, h2 { color: var(--dark); text-align: center; margin-top: 0; }
         .clock { text-align: center; font-size: 1.8em; font-weight: bold; color: var(--primary); margin-bottom: 20px; }
         
+        /* Employee Buttons Grid */
+        .employee-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .emp-btn {
+            background-color: #e0e0e0;
+            color: #333;
+            border: 2px solid transparent;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .emp-btn:hover { background-color: #d5d5d5; }
+        /* สไตล์ตอนที่ปุ่มชื่อถูกเลือก */
+        .emp-btn.active {
+            background-color: var(--active);
+            color: white;
+            border-color: #0d47a1;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
         /* Form Inputs */
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap; }
-        /* เพิ่ม select เข้าไปใน style เดียวกับ input */
-        input, select { padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 150px; font-family: inherit;}
-        input[type="password"] { text-align: center; letter-spacing: 2px; }
+        input { padding: 15px; font-size: 1.1em; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 150px; text-align: center;}
+        input[type="password"] { letter-spacing: 5px; font-weight: bold; max-width: 300px; }
         
         /* Buttons */
-        button { padding: 12px 20px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; }
-        button:hover { opacity: 0.8; }
+        .action-btn { padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; flex: 1; max-width: 200px;}
+        .action-btn:hover { opacity: 0.8; }
         .btn-in { background-color: var(--primary); }
         .btn-out { background-color: var(--danger); }
-        .btn-admin { background-color: var(--dark); width: 100%; margin-top: 20px; }
-        .btn-logout { background-color: #7f8c8d; float: right; margin-bottom: 20px; }
-        .btn-add { background-color: #2980b9; }
-        .btn-excel { background-color: var(--excel); width: 100%; margin-top: 10px; font-size: 1.1em;}
+        
+        .btn-admin { background-color: var(--dark); width: 100%; margin-top: 30px; padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 1em;}
+        .btn-logout { background-color: #7f8c8d; float: right; margin-bottom: 20px; padding: 10px; border: none; border-radius: 5px; color: white; cursor: pointer;}
+        .btn-add { background-color: #2980b9; padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer;}
+        .btn-excel { background-color: var(--excel); width: 100%; margin-top: 10px; padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 1.1em;}
 
         /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95em; }
@@ -67,15 +101,18 @@
         <h1>ระบบบันทึกเวลาเข้า-ออกงาน</h1>
         <div class="clock" id="realtime-clock">00:00:00</div>
 
+        <h3 style="text-align: center; margin-bottom: 10px; color: #555;">👇 กรุณาเลือกชื่อของคุณ</h3>
+        <div id="employeeGrid" class="employee-grid">
+            </div>
+
+        <input type="hidden" id="empName" value="">
+
         <div class="input-group">
-            <select id="empName">
-                <option value="">-- กรุณาเลือกชื่อของคุณ --</option>
-            </select>
             <input type="password" id="empPin" placeholder="รหัส PIN 4 หลัก" maxlength="4">
         </div>
         <div class="input-group">
-            <button class="btn-in" onclick="handleClock('in')">📥 เข้างาน</button>
-            <button class="btn-out" onclick="handleClock('out')">📤 ออกงาน</button>
+            <button class="action-btn btn-in" onclick="handleClock('in')">📥 เข้างาน</button>
+            <button class="action-btn btn-out" onclick="handleClock('out')">📤 ออกงาน</button>
         </div>
 
         <button class="btn-admin" onclick="loginAdmin()">⚙️ เข้าสู่ระบบจัดการหลังบ้าน (HR)</button>
@@ -103,7 +140,7 @@
             <div class="filters">
                 <input type="text" id="searchName" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="renderRecords()">
                 <input type="date" id="filterDate" onchange="renderRecords()">
-                <button class="btn-out" onclick="document.getElementById('searchName').value=''; document.getElementById('filterDate').value=''; renderRecords();">ล้างตัวกรอง</button>
+                <button class="btn-out" style="padding: 10px; border:none; border-radius: 5px; color: white; cursor: pointer;" onclick="document.getElementById('searchName').value=''; document.getElementById('filterDate').value=''; renderRecords();">ล้างตัวกรอง</button>
             </div>
             
             <button class="btn-excel" onclick="exportToCSV()">📥 ดาวน์โหลดข้อมูลเป็น Excel (CSV)</button>
@@ -134,26 +171,44 @@
         document.getElementById('realtime-clock').innerText = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'medium' });
     }, 1000);
 
-    // ================= โหลดรายชื่อพนักงานใส่ Dropdown =================
-    function populateEmployeeDropdown() {
-        const select = document.getElementById('empName');
-        // รีเซ็ตเป็นค่าเริ่มต้นก่อน
-        select.innerHTML = '<option value="">-- กรุณาเลือกชื่อของคุณ --</option>';
-        // วนลูปรายชื่อพนักงานมาใส่ใน Dropdown
-        employees.forEach(emp => {
-            select.innerHTML += `<option value="${emp.name}">${emp.name}</option>`;
-        });
+    // ================= สร้างปุ่มรายชื่อพนักงาน =================
+    function renderEmployeeButtons() {
+        const grid = document.getElementById('employeeGrid');
+        
+        if (employees.length === 0) {
+            grid.innerHTML = '<span style="color:red;">ยังไม่มีรายชื่อพนักงาน กรุณาเข้าสู่ระบบหลังบ้านเพื่อเพิ่มพนักงาน</span>';
+            return;
+        }
+
+        grid.innerHTML = employees.map(emp => 
+            `<button class="emp-btn" id="btn-emp-${emp.name}" onclick="selectEmployee('${emp.name}')">${emp.name}</button>`
+        ).join('');
     }
 
-    // เรียกใช้งานตอนเปิดหน้าเว็บครั้งแรก
-    populateEmployeeDropdown();
+    // ฟังก์ชันเมื่อกดเลือกชื่อ
+    function selectEmployee(name) {
+        // บันทึกชื่อลง input ที่ซ่อนไว้
+        document.getElementById('empName').value = name;
+        
+        // ล้างสีปุ่มทั้งหมดก่อน
+        document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // ใส่สีให้ปุ่มที่ถูกคลิก
+        document.getElementById(`btn-emp-${name}`).classList.add('active');
+        
+        // โฟกัสไปที่ช่องใส่ PIN อัตโนมัติ
+        document.getElementById('empPin').focus();
+    }
+
+    // โหลดปุ่มชื่อตอนเปิดเว็บครั้งแรก
+    renderEmployeeButtons();
 
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
-        const name = document.getElementById('empName').value; // ดึงค่าจาก Dropdown
+        const name = document.getElementById('empName').value; // ดึงชื่อจากปุ่มที่กด
         const pin = document.getElementById('empPin').value.trim();
 
-        if (!name) return alert('กรุณาเลือกชื่อพนักงานก่อนครับ');
+        if (!name) return alert('กรุณากดเลือกชื่อของคุณก่อนครับ');
         if (!pin) return alert('กรุณาใส่รหัส PIN 4 หลักครับ');
 
         const validEmp = employees.find(e => e.name === name && e.pin === pin);
@@ -173,8 +228,11 @@
         }
 
         saveData();
-        document.getElementById('empName').value = ''; // รีเซ็ต Dropdown
-        document.getElementById('empPin').value = '';  // เคลียร์รหัส PIN
+        
+        // เคลียร์ค่าหน้าจอหลังจากบันทึกเสร็จ
+        document.getElementById('empName').value = ''; 
+        document.getElementById('empPin').value = '';  
+        document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active')); // เอาสีปุ่มออก
     }
 
     // ================= ส่วนของ Admin =================
@@ -205,7 +263,7 @@
         employees.push({ name, pin });
         saveData();
         renderEmployees();
-        populateEmployeeDropdown(); // อัปเดต Dropdown หน้าแรกด้วย
+        renderEmployeeButtons(); // อัปเดตปุ่มชื่อหน้าแรก
         document.getElementById('newEmpName').value = '';
         document.getElementById('newEmpPin').value = '';
     }
@@ -215,7 +273,7 @@
             employees = employees.filter(e => e.name !== name);
             saveData();
             renderEmployees();
-            populateEmployeeDropdown(); // อัปเดต Dropdown หน้าแรกด้วย
+            renderEmployeeButtons(); // อัปเดตปุ่มชื่อหน้าแรก
         }
     }
 
@@ -225,7 +283,7 @@
             <tr>
                 <td>${emp.name}</td>
                 <td>***${emp.pin.slice(-1)} (ซ่อน)</td>
-                <td><button class="btn-out" onclick="deleteEmployee('${emp.name}')">ลบ</button></td>
+                <td><button class="btn-out" style="padding:5px 10px; border:none; border-radius:5px; color:white; cursor:pointer;" onclick="deleteEmployee('${emp.name}')">ลบ</button></td>
             </tr>
         `).join('');
     }
