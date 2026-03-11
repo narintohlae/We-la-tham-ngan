@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Secure Time Tracking</title>
+    <title>Enterprise Cloud Time Tracking</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #f8fafc;
@@ -14,7 +16,6 @@
             --text-sub: #64748b;
             --border: #e2e8f0;
             --success: #10b981;
-            --error: #ef4444;
         }
 
         body { 
@@ -34,9 +35,8 @@
 
         .input-field {
             width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border);
-            border-radius: 12px; font-size: 1.1rem; text-align: center; background: #fdfdfd; outline: none;
+            border-radius: 12px; font-size: 1.1rem; text-align: center; background: #fdfdfd; outline: none; box-sizing: border-box;
         }
-        .input-field:focus { border-color: var(--primary); }
 
         .btn {
             width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600;
@@ -44,7 +44,7 @@
         }
         .btn-main { background: var(--primary); color: white; }
         .btn-main:hover { opacity: 0.9; }
-        .btn-ghost { background: transparent; color: var(--text-sub); margin-top: 12px; }
+        .btn-excel { background: #1d6f42; color: white; margin-top: 10px; }
 
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
         .action-btn { 
@@ -53,7 +53,7 @@
         }
         .action-btn:hover { background: #f8fafc; border-color: var(--primary); }
 
-        .admin-box { margin-top: 30px; padding: 15px; background: #f1f5f9; border-radius: 12px; text-align: center; }
+        .logout-link { display: block; text-align: center; margin-top: 20px; color: var(--text-sub); font-size: 0.8rem; cursor: pointer; border: none; background: none; text-decoration: underline; width: 100%; }
     </style>
 </head>
 <body>
@@ -61,9 +61,9 @@
 <div class="container">
     
     <div id="page-login" class="page active">
-        <h1>Secure Login</h1>
-        <p class="subtitle">ระบุ PIN เพื่อเข้าใช้งานระบบ</p>
-        <input type="password" id="login-pin" class="input-field" placeholder="Enter 4-digit PIN" maxlength="4">
+        <h1>Work Log Cloud</h1>
+        <p class="subtitle">ระบุ PIN เพื่อเข้าใช้งาน</p>
+        <input type="password" id="login-pin" class="input-field" placeholder="Enter PIN" maxlength="4">
         <button class="btn btn-main" onclick="handleLogin()">Sign In</button>
     </div>
 
@@ -73,30 +73,41 @@
 
         <div class="action-grid">
             <button class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In</button>
-            <button class="action-btn" onclick="record('ออกงาน')" style="color: var(--error)">Check Out</button>
+            <button class="action-btn" onclick="record('ออกงาน')" style="color: #ef4444">Check Out</button>
             <button class="action-btn" onclick="record('โอที')" style="color: #6366f1">Overtime</button>
             <button class="action-btn" onclick="record('ลา')" style="color: #f59e0b">Leave</button>
         </div>
 
-        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        <button class="logout-link" onclick="logout()">Logout / ยกเลิก</button>
     </div>
 
     <div id="page-admin" class="page">
         <h1>Admin Control</h1>
-        <p class="subtitle">ระบบจัดการและออกรายงานข้อมูล</p>
-        
-        <div class="admin-box">
-            <p style="font-size: 0.9rem; font-weight: 600; margin-bottom: 15px;">สรุปข้อมูลพนักงาน</p>
-            <button class="btn btn-main" style="background: var(--success);" onclick="exportToExcel()">📊 Download Excel Report</button>
-        </div>
-
-        <button class="btn btn-ghost" style="color: var(--error);" onclick="clearData()">Clear All Data</button>
-        <button class="btn btn-ghost" onclick="logout()">Back to Login</button>
+        <p class="subtitle">จัดการข้อมูลบนระบบ Cloud</p>
+        <button class="btn btn-excel" onclick="exportFromFirebase()">📊 Export All Data to Excel</button>
+        <button class="logout-link" style="color: #ef4444" onclick="confirmClear()">Clear All Records</button>
+        <button class="logout-link" onclick="logout()">Back to Home</button>
     </div>
 
 </div>
 
 <script>
+    // Firebase Configuration ที่คุณให้มา
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-RzkBZ3lXFodonqoMFIrpuCwQ4JPr71g",
+      authDomain: "we-la-tham-ngan.firebaseapp.com",
+      projectId: "we-la-tham-ngan",
+      storageBucket: "we-la-tham-ngan.firebasestorage.app",
+      messagingSenderId: "321115203647",
+      appId: "1:321115203647:web:9d8d11ed78c4e949e3b08a",
+      measurementId: "G-71P7D9NKJK",
+      databaseURL: "https://we-la-tham-ngan-default-rtdb.asia-southeast1.firebasedatabase.app" // เพิ่ม URL สำหรับภูมิภาคเอเชีย
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const USERS = {
         "1234": { name: "Jantra", role: "staff" },
         "5678": { name: "Panwasa", role: "staff" },
@@ -136,45 +147,60 @@
     function record(type) {
         let note = "-";
         if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
-        if (type === 'โอที') note = confirm("กดตกลงเพื่อ เริ่มโอที / ยกเลิกเพื่อ จบโอที") ? "เริ่มโอที" : "จบโอที";
+        if (type === 'โอที') note = confirm("OK: เริ่มโอที / Cancel: จบโอที") ? "เริ่มโอที" : "จบโอที";
 
         const now = new Date();
         const entry = {
-            "ชื่อพนักงาน": currentUser,
-            "กิจกรรม": type,
-            "วันที่": now.toLocaleDateString('th-TH'),
-            "เวลา": now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-            "หมายเหตุ": note
+            name: currentUser,
+            type: type,
+            date: now.toLocaleDateString('th-TH'),
+            time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+            note: note,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         };
 
-        const logs = JSON.parse(localStorage.getItem('adminLogs')) || [];
-        logs.unshift(entry);
-        localStorage.setItem('adminLogs', JSON.stringify(logs));
-        
-        alert(`บันทึกสำเร็จ`);
-        logout();
+        // บันทึกไปที่ Cloud (Firebase)
+        db.ref('attendance_logs').push(entry, (error) => {
+            if (error) {
+                alert('เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
+            } else {
+                alert('บันทึกข้อมูลเรียบร้อย (Cloud)');
+                logout();
+            }
+        });
+    }
+
+    function exportFromFirebase() {
+        db.ref('attendance_logs').once('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return alert('ยังไม่มีข้อมูลในระบบ');
+            
+            // แปลง Object เป็น Array และเรียงลำดับตามเวลาล่าสุด
+            const logs = Object.values(data).reverse().map(item => ({
+                "พนักงาน": item.name,
+                "กิจกรรม": item.type,
+                "วันที่": item.date,
+                "เวลา": item.time,
+                "หมายเหตุ": item.note
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(logs);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+            XLSX.writeFile(wb, "Staff_Report_Cloud.xlsx");
+        });
+    }
+
+    function confirmClear() {
+        if (confirm('ยืนยันลบข้อมูลทั้งหมดบน Cloud? ไม่สามารถกู้คืนได้')) {
+            db.ref('attendance_logs').remove();
+            alert('ลบข้อมูลสำเร็จ');
+        }
     }
 
     function logout() {
         currentUser = null;
         showPage('page-login');
-    }
-
-    function exportToExcel() {
-        const logs = JSON.parse(localStorage.getItem('adminLogs')) || [];
-        if (!logs.length) return alert('ไม่มีข้อมูลในระบบ');
-        
-        const ws = XLSX.utils.json_to_sheet(logs);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "AttendanceData");
-        XLSX.writeFile(wb, "Staff_Report_Secure.xlsx");
-    }
-
-    function clearData() {
-        if (confirm('คุณต้องการลบข้อมูลประวัติทั้งหมดใช่หรือไม่? (การกระทำนี้ย้อนคืนไม่ได้)')) {
-            localStorage.removeItem('adminLogs');
-            alert('ล้างข้อมูลสำเร็จ');
-        }
     }
 </script>
 
