@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking - Kiosk Edition</title>
+    <title>Time Tracking - Smart Kiosk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -46,12 +46,14 @@
 
         h1, h2, h3 { color: var(--text-main); text-align: center; margin-top: 0; font-weight: 600; }
         
-        .clock-container { text-align: center; margin-bottom: 30px; }
+        .clock-container { text-align: center; margin-bottom: 20px; }
         .clock-time { font-size: 3rem; font-weight: 600; color: var(--primary); letter-spacing: 2px; line-height: 1; }
         .clock-date { font-size: 1rem; color: var(--text-muted); margin-top: 8px; font-weight: 300; }
         
         .section-title { text-align: center; margin-bottom: 15px; color: var(--text-muted); font-size: 0.95em; font-weight: 400; }
-        .employee-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 30px; }
+        
+        /* Employee Buttons */
+        .employee-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 20px; }
         .emp-btn {
             background-color: #f9fafb;
             color: var(--text-main);
@@ -74,33 +76,41 @@
             font-weight: 500;
         }
 
-        /* Input & Numpad */
-        .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
-        input {
-            font-family: 'Prompt', sans-serif;
-            padding: 16px;
-            font-size: 1em;
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            flex: 1;
-            min-width: 150px;
-            background-color: #f9fafb;
-            outline: none;
+        /* Step 2 Container (Animation) */
+        #step2-container {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
-        
-        /* ช่องใส่ PIN สำหรับพนักงาน (ทำให้กดพิมพ์จากคีย์บอร์ดไม่ได้ เพื่อใช้ Numpad แทน) */
-        input#empPin {
-            text-align: center;
-            letter-spacing: 12px;
-            font-size: 1.8em;
-            font-weight: 600;
-            max-width: 280px;
-            background-color: #fff;
-            border: 2px solid var(--border-light);
-            color: var(--primary);
+        #step2-container.hidden-step {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            display: none;
         }
 
-        /* ตารางปุ่มตัวเลข Numpad */
+        /* PIN Dots Indicator (แทนที่ช่อง Input) */
+        .pin-display {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0 30px 0;
+        }
+        .pin-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            background-color: transparent;
+            transition: all 0.2s ease;
+        }
+        .pin-dot.filled {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Numpad */
         .numpad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -123,16 +133,16 @@
             align-items: center;
             justify-content: center;
         }
-        .num-btn:active {
-            background-color: var(--border-light);
-            transform: scale(0.95);
-        }
+        .num-btn:active { background-color: var(--border-light); transform: scale(0.95); }
         .num-btn-del { color: var(--danger); background-color: #fee2e2; border-color: #fca5a5; }
 
-        /* ปุ่ม Action */
+        /* Action Buttons */
+        .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        input { font-family: 'Prompt', sans-serif; padding: 12px; font-size: 1em; border: 1px solid var(--border-light); border-radius: 8px; flex: 1; min-width: 150px; background-color: #f9fafb; outline: none; }
+        
         .action-btn {
             padding: 18px 30px;
-            font-size: 1.2em;
+            font-size: 1.1em;
             border: none;
             border-radius: 16px;
             cursor: pointer;
@@ -154,11 +164,10 @@
         
         .btn-text-link { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: 'Prompt', sans-serif; font-size: 0.9em; text-decoration: underline; padding: 10px; width: 100%; margin-top: 20px; transition: color 0.2s; }
         .btn-text-link:hover { color: var(--text-main); }
-        
         .btn-add { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-family: 'Prompt'; }
         .btn-excel { background-color: var(--excel); color: white; width: 100%; margin-top: 10px; padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-size: 1em; font-family: 'Prompt'; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* ตาราง Admin */
+        /* Admin Tables */
         .admin-section { border: 1px solid var(--border-light); padding: 25px; border-radius: 16px; margin-bottom: 24px; background: #fff; }
         .filters { display: flex; gap: 10px; background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--border-light);}
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; font-size: 0.95em; }
@@ -182,45 +191,53 @@
             <div class="clock-date" id="clock-date">วันเดือนปี</div>
         </div>
 
-        <div class="divider"></div>
-
-        <div class="section-title">1. เลือกชื่อของคุณ</div>
+        <div class="section-title">เลือกชื่อเพื่อบันทึกเวลา</div>
         <div id="employeeGrid" class="employee-grid">
             </div>
 
         <input type="hidden" id="empName" value="">
 
-        <div class="section-title">2. ใส่รหัส PIN 4 หลัก</div>
-        <div class="input-group">
-            <input type="password" id="empPin" placeholder="----" maxlength="4" readonly>
-        </div>
+        <div id="step2-container" class="hidden-step">
+            <div class="divider" style="margin: 20px 0;"></div>
+            
+            <div class="section-title" id="selected-emp-text" style="color: var(--primary); font-weight: 500; font-size: 1.1em;">
+                กรุณาใส่รหัส PIN 4 หลัก
+            </div>
 
-        <div class="numpad">
-            <button class="num-btn" onclick="pressNum('1')">1</button>
-            <button class="num-btn" onclick="pressNum('2')">2</button>
-            <button class="num-btn" onclick="pressNum('3')">3</button>
-            <button class="num-btn" onclick="pressNum('4')">4</button>
-            <button class="num-btn" onclick="pressNum('5')">5</button>
-            <button class="num-btn" onclick="pressNum('6')">6</button>
-            <button class="num-btn" onclick="pressNum('7')">7</button>
-            <button class="num-btn" onclick="pressNum('8')">8</button>
-            <button class="num-btn" onclick="pressNum('9')">9</button>
-            <button class="num-btn num-btn-del" onclick="clearNum()">C</button>
-            <button class="num-btn" onclick="pressNum('0')">0</button>
-            <button class="num-btn num-btn-del" onclick="deleteNum()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
-            </button>
-        </div>
+            <div class="pin-display">
+                <div class="pin-dot" id="dot-1"></div>
+                <div class="pin-dot" id="dot-2"></div>
+                <div class="pin-dot" id="dot-3"></div>
+                <div class="pin-dot" id="dot-4"></div>
+            </div>
 
-        <div class="input-group">
-            <button class="action-btn btn-in" onclick="handleClock('in')">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                เข้างาน
-            </button>
-            <button class="action-btn btn-out" onclick="handleClock('out')">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                ออกงาน
-            </button>
+            <div class="numpad">
+                <button class="num-btn" onclick="pressNum('1')">1</button>
+                <button class="num-btn" onclick="pressNum('2')">2</button>
+                <button class="num-btn" onclick="pressNum('3')">3</button>
+                <button class="num-btn" onclick="pressNum('4')">4</button>
+                <button class="num-btn" onclick="pressNum('5')">5</button>
+                <button class="num-btn" onclick="pressNum('6')">6</button>
+                <button class="num-btn" onclick="pressNum('7')">7</button>
+                <button class="num-btn" onclick="pressNum('8')">8</button>
+                <button class="num-btn" onclick="pressNum('9')">9</button>
+                <button class="num-btn num-btn-del" onclick="clearNum()">C</button>
+                <button class="num-btn" onclick="pressNum('0')">0</button>
+                <button class="num-btn num-btn-del" onclick="deleteNum()">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
+                </button>
+            </div>
+
+            <div class="input-group">
+                <button class="action-btn btn-in" onclick="handleClock('in')">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    เข้างาน
+                </button>
+                <button class="action-btn btn-out" onclick="handleClock('out')">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    ออกงาน
+                </button>
+            </div>
         </div>
 
         <button class="btn-text-link" onclick="loginAdmin()">ผู้ดูแลระบบ (HR Dashboard) &rarr;</button>
@@ -236,7 +253,7 @@
             <h3>จัดการพนักงาน</h3>
             <div class="input-group">
                 <input type="text" id="newEmpName" placeholder="ชื่อพนักงาน">
-                <input type="password" id="newEmpPin" placeholder="PIN (4 หลัก)" maxlength="4" style="letter-spacing: normal; font-size: 1em;">
+                <input type="password" id="newEmpPin" placeholder="PIN (4 หลัก)" maxlength="4" style="letter-spacing: normal;">
                 <button class="btn-add" onclick="addEmployee()">+ เพิ่มรายชื่อ</button>
             </div>
             <table>
@@ -273,6 +290,9 @@
     
     let records = JSON.parse(localStorage.getItem('timeRecords_v2')) || [];
     let employees = JSON.parse(localStorage.getItem('employees_v2')) || [];
+    
+    // ตัวแปรเก็บรหัส PIN ที่กำลังกด
+    let currentPinCode = "";
 
     function saveData() {
         localStorage.setItem('timeRecords_v2', JSON.stringify(records));
@@ -305,43 +325,73 @@
 
     function selectEmployee(name) {
         document.getElementById('empName').value = name;
+        
+        // เคลียร์สีปุ่มเดิม และใส่สีปุ่มใหม่
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-emp-${name}`).classList.add('active');
         
-        // เคลียร์รหัส PIN เก่าทิ้งทุกครั้งที่เปลี่ยนชื่อคน
-        document.getElementById('empPin').value = '';
+        // เปลี่ยนข้อความให้ระบุชื่อ
+        document.getElementById('selected-emp-text').innerText = `ใส่รหัส PIN ของคุณ: ${name}`;
+        
+        // เคลียร์รหัสที่พิมพ์ค้างไว้และจุดไข่ปลา
+        clearNum();
+        
+        // แสดง Step 2 (Numpad + Buttons)
+        document.getElementById('step2-container').classList.remove('hidden-step');
     }
 
     renderEmployeeButtons();
 
-    // ================= ระบบแป้นพิมพ์ตัวเลข (Numpad) =================
+    // ================= ระบบแป้นพิมพ์ & จุดไข่ปลา =================
+    function updatePinDots() {
+        for (let i = 1; i <= 4; i++) {
+            const dot = document.getElementById(`dot-${i}`);
+            if (i <= currentPinCode.length) {
+                dot.classList.add('filled');
+            } else {
+                dot.classList.remove('filled');
+            }
+        }
+    }
+
     function pressNum(num) {
-        const pinInput = document.getElementById('empPin');
-        if (pinInput.value.length < 4) {
-            pinInput.value += num;
+        if (currentPinCode.length < 4) {
+            currentPinCode += num;
+            updatePinDots();
         }
     }
 
     function deleteNum() {
-        const pinInput = document.getElementById('empPin');
-        pinInput.value = pinInput.value.slice(0, -1);
+        if (currentPinCode.length > 0) {
+            currentPinCode = currentPinCode.slice(0, -1);
+            updatePinDots();
+        }
     }
 
     function clearNum() {
-        document.getElementById('empPin').value = '';
+        currentPinCode = "";
+        updatePinDots();
+    }
+
+    function resetToHome() {
+        // ซ่อน Step 2 และเคลียร์ทุกอย่างกลับหน้าเริ่มต้น
+        document.getElementById('step2-container').classList.add('hidden-step');
+        document.getElementById('empName').value = ''; 
+        clearNum();  
+        document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
     }
 
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
         const name = document.getElementById('empName').value;
-        const pin = document.getElementById('empPin').value.trim();
+        const pin = currentPinCode; // ใช้รหัสจากตัวแปร ไม่ใช่ input box แล้ว
 
         if (!name) return alert('กรุณาเลือกชื่อของคุณก่อนครับ');
         if (pin.length !== 4) return alert('กรุณาใส่รหัส PIN ให้ครบ 4 หลักครับ');
 
         const validEmp = employees.find(e => e.name === name && e.pin === pin);
         if (!validEmp) {
-            clearNum(); // ถ้ารหัสผิด ให้ล้างช่องรหัสให้กรอกใหม่
+            clearNum(); 
             return alert('รหัส PIN ไม่ถูกต้อง!');
         }
 
@@ -350,14 +400,14 @@
 
         if (type === 'in') {
             if (activeRecordIndex > -1) {
-                clearNum();
+                resetToHome();
                 return alert('คุณได้บันทึกเข้างานไปแล้วครับ');
             }
             records.push({ id: Date.now(), name: name, timeIn: now, timeOut: null });
             alert(`เข้างานสำเร็จ: ${name}`);
         } else if (type === 'out') {
             if (activeRecordIndex === -1) {
-                clearNum();
+                resetToHome();
                 return alert('ยังไม่ได้บันทึกเข้างานครับ');
             }
             records[activeRecordIndex].timeOut = now;
@@ -365,9 +415,7 @@
         }
 
         saveData();
-        document.getElementById('empName').value = ''; 
-        clearNum();  
-        document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
+        resetToHome(); // กลับสู่หน้าจอว่างๆ พร้อมให้คนต่อไปกด
     }
 
     // ================= ส่วนของ Admin =================
@@ -386,6 +434,7 @@
     function logoutAdmin() {
         document.getElementById('view-admin').classList.add('hidden');
         document.getElementById('view-employee').classList.remove('hidden');
+        resetToHome();
     }
 
     function addEmployee() {
