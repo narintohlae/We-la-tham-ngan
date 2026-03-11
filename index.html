@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Time Tracking - Locked Kiosk</title>
+    <title>Time Tracking - Premium Kiosk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -16,6 +16,7 @@
             --success-hover: #059669;
             --danger: #ef4444;
             --danger-hover: #dc2626;
+            --warning: #f59e0b;
             --excel: #059669;
             --border-light: #e5e7eb;
         }
@@ -32,8 +33,6 @@
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
-            
-            /* 2. ป้องกันการเคาะหน้าจอ 2 ครั้งเพื่อซูม (CSS) */
             touch-action: pan-x pan-y;
             -webkit-text-size-adjust: 100%;
             overflow-x: hidden;
@@ -60,35 +59,21 @@
         /* Employee Buttons */
         .employee-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 20px; }
         .emp-btn {
-            background-color: #f9fafb;
-            color: var(--text-main);
-            border: 1px solid var(--border-light);
-            padding: 12px 24px;
-            font-size: 1em;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: 'Prompt', sans-serif;
-            font-weight: 400;
-            /* ป้องกันการคลุมดำข้อความบนปุ่ม */
-            user-select: none;
-            -webkit-user-select: none;
+            background-color: #f9fafb; color: var(--text-main); border: 1px solid var(--border-light);
+            padding: 12px 24px; font-size: 1em; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
+            font-family: 'Prompt', sans-serif; font-weight: 400; user-select: none; -webkit-user-select: none;
         }
         .emp-btn:hover { background-color: #f3f4f6; border-color: #d1d5db; }
         .emp-btn.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25);
-            transform: translateY(-2px);
-            font-weight: 500;
+            background-color: var(--primary); color: white; border-color: var(--primary);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25); transform: translateY(-2px); font-weight: 500;
         }
 
-        /* Step 2 Container (Animation) */
+        /* Step 2 Container */
         #step2-container { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
         #step2-container.hidden-step { opacity: 0; transform: translateY(20px); pointer-events: none; display: none; }
 
-        /* PIN Dots Indicator */
+        /* PIN Dots */
         .pin-display { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; transition: opacity 0.3s; }
         .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #cbd5e1; background-color: transparent; transition: all 0.2s ease; }
         .pin-dot.filled { background-color: var(--primary); border-color: var(--primary); transform: scale(1.1); }
@@ -104,7 +89,7 @@
         .num-btn:active { background-color: var(--border-light); transform: scale(0.95); }
         .num-btn-del { color: var(--danger); background-color: #fee2e2; border-color: #fca5a5; }
 
-        /* Action Buttons (ถูกซ่อนไว้ตอนแรก) */
+        /* Action Buttons */
         .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
         #action-buttons { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
         #action-buttons.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; display: none !important; }
@@ -127,7 +112,8 @@
         /* Admin Tables */
         .admin-section { border: 1px solid var(--border-light); padding: 25px; border-radius: 16px; margin-bottom: 24px; background: #fff; }
         .filters { display: flex; gap: 10px; background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--border-light);}
-        input[type="text"], input[type="password"], input[type="date"] { font-family: 'Prompt', sans-serif; padding: 12px; font-size: 1em; border: 1px solid var(--border-light); border-radius: 8px; flex: 1; min-width: 150px; background-color: #f9fafb; outline: none; }
+        input[type="text"], input[type="password"], input[type="date"] { font-family: 'Prompt', sans-serif; padding: 12px; font-size: 1em; border: 1px solid var(--border-light); border-radius: 8px; flex: 1; min-width: 150px; background-color: #f9fafb; outline: none; transition: 0.2s;}
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; font-size: 0.95em; }
         th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid var(--border-light); }
         th { color: var(--text-muted); font-weight: 500; font-size: 0.9em; text-transform: uppercase; border-bottom: 2px solid var(--border-light); }
@@ -138,6 +124,46 @@
         
         .hidden { display: none !important; }
         .divider { height: 1px; background-color: var(--border-light); margin: 30px 0; }
+
+        /* ================= Custom Modal Popup Styles ================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-box {
+            background: #ffffff; padding: 35px 30px; border-radius: 24px;
+            text-align: center; max-width: 400px; width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9) translateY(20px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-overlay.active .modal-box { transform: scale(1) translateY(0); }
+        
+        .modal-icon-container { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        .icon-success { background: #d1fae5; color: var(--success); }
+        .icon-error { background: #fee2e2; color: var(--danger); }
+        .icon-warning { background: #fef3c7; color: var(--warning); }
+        .icon-info { background: #dbeafe; color: var(--primary); }
+        
+        .modal-title { font-size: 1.4em; font-weight: 600; color: var(--text-main); margin: 0 0 10px 0; }
+        .modal-message { font-size: 1em; color: var(--text-muted); margin: 0 0 25px 0; line-height: 1.5; }
+        
+        .modal-input { margin-bottom: 25px; width: 100%; text-align: center; letter-spacing: 2px; }
+        
+        .modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .modal-btn {
+            padding: 14px 24px; font-size: 1em; border: none; border-radius: 12px;
+            cursor: pointer; font-family: 'Prompt', sans-serif; font-weight: 500; flex: 1; transition: 0.2s;
+        }
+        .modal-btn-primary { background-color: var(--primary); color: white; }
+        .modal-btn-primary:hover { background-color: #2563eb; }
+        .modal-btn-secondary { background-color: #f3f4f6; color: var(--text-main); }
+        .modal-btn-secondary:hover { background-color: #e5e7eb; }
+        .modal-btn-danger { background-color: var(--danger); color: white; }
+        .modal-btn-danger:hover { background-color: var(--danger-hover); }
     </style>
 </head>
 <body>
@@ -150,14 +176,11 @@
         </div>
 
         <div class="section-title">เลือกชื่อเพื่อบันทึกเวลา</div>
-        <div id="employeeGrid" class="employee-grid">
-            </div>
-
+        <div id="employeeGrid" class="employee-grid"></div>
         <input type="hidden" id="empName" value="">
 
         <div id="step2-container" class="hidden-step">
             <div class="divider" style="margin: 20px 0;"></div>
-            
             <div class="section-title" id="selected-emp-text" style="color: var(--primary); font-weight: 500; font-size: 1.1em;">
                 ใส่รหัส PIN ของคุณ
             </div>
@@ -198,7 +221,7 @@
             </div>
         </div>
 
-        <button class="btn-text-link" onclick="loginAdmin()">ผู้ดูแลระบบ (HR Dashboard) &rarr;</button>
+        <button class="btn-text-link" onclick="promptAdminLogin()">ผู้ดูแลระบบ (HR Dashboard) &rarr;</button>
     </div>
 
     <div id="view-admin" class="hidden">
@@ -243,35 +266,113 @@
     </div>
 </div>
 
+<div id="customModal" class="modal-overlay">
+    <div class="modal-box">
+        <div id="modalIcon" class="modal-icon-container"></div>
+        <h3 id="modalTitle" class="modal-title">Title</h3>
+        <p id="modalMessage" class="modal-message">Message</p>
+        <input type="password" id="modalInput" class="modal-input hidden" placeholder="รหัสผ่าน">
+        <div class="modal-actions" id="modalActions">
+            </div>
+    </div>
+</div>
+
 <script>
-    // --- 3. JavaScript ป้องกันการซูมด้วยนิ้ว (Pinch-to-zoom) และเมาส์ (Ctrl+Scroll) ---
-    document.addEventListener('touchstart', function(event) {
-        if (event.touches.length > 1) {
-            event.preventDefault(); // กันการใช้นิ้วถ่างจอ
-        }
-    }, { passive: false });
-
+    // --- ป้องกันการซูม ---
+    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
     let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(event) {
-        let now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
-            event.preventDefault(); // กันการเคาะเบิ้ล 2 ครั้ง (Double tap) สำหรับ iOS
-        }
-        lastTouchEnd = now;
-    }, false);
+    document.addEventListener('touchend', e => { let now = (new Date()).getTime(); if (now - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = now; }, false);
+    document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
 
-    document.addEventListener('wheel', function(event) {
-        if (event.ctrlKey) {
-            event.preventDefault(); // กันการกด Ctrl + กลิ้งเมาส์ซูมบน PC
+    // ================= Custom Modal System (JavaScript) =================
+    const modalSystem = {
+        overlay: document.getElementById('customModal'),
+        icon: document.getElementById('modalIcon'),
+        title: document.getElementById('modalTitle'),
+        message: document.getElementById('modalMessage'),
+        input: document.getElementById('modalInput'),
+        actions: document.getElementById('modalActions'),
+        callback: null,
+
+        icons: {
+            success: `<svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`,
+            error: `<svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`,
+            warning: `<svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`,
+            info: `<svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+        },
+
+        close() {
+            this.overlay.classList.remove('active');
+            setTimeout(() => {
+                this.input.classList.add('hidden');
+                this.input.value = '';
+            }, 300);
+        },
+
+        showAlert(type, titleText, messageText, onClose = null) {
+            this.icon.className = `modal-icon-container icon-${type}`;
+            this.icon.innerHTML = this.icons[type];
+            this.title.innerText = titleText;
+            this.message.innerText = messageText;
+            this.input.classList.add('hidden');
+            
+            this.actions.innerHTML = `<button class="modal-btn modal-btn-primary" id="btn-modal-ok">ตกลง</button>`;
+            document.getElementById('btn-modal-ok').onclick = () => { this.close(); if(onClose) onClose(); };
+            
+            this.overlay.classList.add('active');
+            document.getElementById('btn-modal-ok').focus();
+        },
+
+        showConfirm(titleText, messageText, onConfirm) {
+            this.icon.className = `modal-icon-container icon-warning`;
+            this.icon.innerHTML = this.icons.warning;
+            this.title.innerText = titleText;
+            this.message.innerText = messageText;
+            this.input.classList.add('hidden');
+
+            this.actions.innerHTML = `
+                <button class="modal-btn modal-btn-secondary" id="btn-modal-cancel">ยกเลิก</button>
+                <button class="modal-btn modal-btn-danger" id="btn-modal-confirm">ยืนยัน</button>
+            `;
+            document.getElementById('btn-modal-cancel').onclick = () => this.close();
+            document.getElementById('btn-modal-confirm').onclick = () => { this.close(); onConfirm(); };
+            
+            this.overlay.classList.add('active');
+        },
+
+        showPrompt(titleText, messageText, onConfirm) {
+            this.icon.className = `modal-icon-container icon-info`;
+            this.icon.innerHTML = this.icons.info;
+            this.title.innerText = titleText;
+            this.message.innerText = messageText;
+            
+            this.input.classList.remove('hidden');
+            this.input.value = '';
+            
+            this.actions.innerHTML = `
+                <button class="modal-btn modal-btn-secondary" id="btn-modal-cancel">ยกเลิก</button>
+                <button class="modal-btn modal-btn-primary" id="btn-modal-confirm">ตกลง</button>
+            `;
+            
+            document.getElementById('btn-modal-cancel').onclick = () => this.close();
+            document.getElementById('btn-modal-confirm').onclick = () => {
+                const val = this.input.value;
+                this.close();
+                onConfirm(val);
+            };
+
+            // กด Enter เพื่อตกลง
+            this.input.onkeypress = (e) => { if(e.key === 'Enter') document.getElementById('btn-modal-confirm').click(); };
+            
+            this.overlay.classList.add('active');
+            setTimeout(() => this.input.focus(), 100);
         }
-    }, { passive: false });
-    // -------------------------------------------------------------------------
+    };
+    // ===================================================================
 
     const ADMIN_PASSWORD = "admin"; 
-    
     let records = JSON.parse(localStorage.getItem('timeRecords_v2')) || [];
     let employees = JSON.parse(localStorage.getItem('employees_v2')) || [];
-    
     let currentPinCode = "";
     let isPinVerified = false;
 
@@ -280,33 +381,25 @@
         localStorage.setItem('employees_v2', JSON.stringify(employees));
     }
 
-    // --- ระบบเวลา ---
     function updateClock() {
         const now = new Date();
-        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        
-        document.getElementById('clock-time').innerText = now.toLocaleTimeString('th-TH', timeOptions);
-        document.getElementById('clock-date').innerText = now.toLocaleDateString('th-TH', dateOptions);
+        document.getElementById('clock-time').innerText = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('clock-date').innerText = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // ================= สร้างปุ่มรายชื่อพนักงาน =================
     function renderEmployeeButtons() {
         const grid = document.getElementById('employeeGrid');
         if (employees.length === 0) {
             grid.innerHTML = '<span style="color:#ef4444; font-size: 0.9em;">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มในระบบผู้ดูแล</span>';
             return;
         }
-        grid.innerHTML = employees.map(emp => 
-            `<button class="emp-btn" id="btn-emp-${emp.name}" onclick="selectEmployee('${emp.name}')">${emp.name}</button>`
-        ).join('');
+        grid.innerHTML = employees.map(emp => `<button class="emp-btn" id="btn-emp-${emp.name}" onclick="selectEmployee('${emp.name}')">${emp.name}</button>`).join('');
     }
 
     function selectEmployee(name) {
         document.getElementById('empName').value = name;
-        
         document.getElementById('selected-emp-text').classList.remove('hidden');
         document.getElementById('pin-display').classList.remove('hidden');
         document.getElementById('numpad').classList.remove('hidden');
@@ -318,22 +411,16 @@
         
         clearNum(); 
         document.getElementById('step2-container').classList.remove('hidden-step');
-        
-        setTimeout(() => {
-            document.getElementById('step2-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
+        setTimeout(() => document.getElementById('step2-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
     }
 
     renderEmployeeButtons();
 
-    // ================= ระบบแป้นพิมพ์ & การตรวจสอบรหัส =================
     function updatePinDots() {
         for (let i = 1; i <= 4; i++) {
             const dot = document.getElementById(`dot-${i}`);
             dot.classList.remove('filled');
-            if (i <= currentPinCode.length) {
-                dot.classList.add('filled');
-            }
+            if (i <= currentPinCode.length) dot.classList.add('filled');
         }
     }
 
@@ -341,10 +428,7 @@
         if (isPinVerified || currentPinCode.length >= 4) return;
         currentPinCode += num;
         updatePinDots();
-
-        if (currentPinCode.length === 4) {
-            verifyPin();
-        }
+        if (currentPinCode.length === 4) verifyPin();
     }
 
     function deleteNum() {
@@ -366,15 +450,12 @@
         setTimeout(() => {
             if (validEmp) {
                 isPinVerified = true;
-                
                 document.getElementById('selected-emp-text').classList.add('hidden');
                 document.getElementById('pin-display').classList.add('hidden');
                 document.getElementById('numpad').classList.add('hidden');
-                
                 document.getElementById('action-buttons').classList.remove('hidden');
             } else {
-                alert('❌ รหัส PIN ไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง');
-                clearNum();
+                modalSystem.showAlert('error', 'รหัสไม่ถูกต้อง', 'รหัส PIN ที่คุณใส่ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง', () => clearNum());
             }
         }, 150); 
     }
@@ -382,17 +463,14 @@
     function resetToHome() {
         document.getElementById('step2-container').classList.add('hidden-step');
         document.getElementById('empName').value = ''; 
-        
         document.getElementById('selected-emp-text').classList.remove('hidden');
         document.getElementById('pin-display').classList.remove('hidden');
         document.getElementById('numpad').classList.remove('hidden');
         document.getElementById('action-buttons').classList.add('hidden');
-
         clearNum();  
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
     }
 
-    // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
         const name = document.getElementById('empName').value;
         const activeRecordIndex = records.findIndex(r => r.name === name && !r.timeOut);
@@ -400,35 +478,34 @@
 
         if (type === 'in') {
             if (activeRecordIndex > -1) {
-                resetToHome();
-                return alert(`คุณ ${name} ได้บันทึกเข้างานไปแล้วครับ`);
+                modalSystem.showAlert('warning', 'แจ้งเตือน', `คุณ ${name} ได้บันทึกเข้างานไปแล้วครับ`, () => resetToHome());
+                return;
             }
             records.push({ id: Date.now(), name: name, timeIn: now, timeOut: null });
-            alert(`✅ บันทึกเวลาเข้างานสำเร็จ: ${name}`);
+            modalSystem.showAlert('success', 'เข้างานสำเร็จ', `บันทึกเวลาเข้างานเรียบร้อยแล้ว: ${name}`, () => resetToHome());
         } else if (type === 'out') {
             if (activeRecordIndex === -1) {
-                resetToHome();
-                return alert(`ไม่พบประวัติการเข้างานของคุณ ${name} ครับ`);
+                modalSystem.showAlert('warning', 'แจ้งเตือน', `ไม่พบประวัติการเข้างานของคุณ ${name} ครับ`, () => resetToHome());
+                return;
             }
             records[activeRecordIndex].timeOut = now;
-            alert(`✅ บันทึกเวลาออกงานสำเร็จ: ${name}`);
+            modalSystem.showAlert('success', 'ออกงานสำเร็จ', `บันทึกเวลาออกงานเรียบร้อยแล้ว: ${name}`, () => resetToHome());
         }
-
         saveData();
-        resetToHome(); 
     }
 
     // ================= ส่วนของ Admin =================
-    function loginAdmin() {
-        const pass = prompt('รหัสผ่านผู้ดูแลระบบ:');
-        if (pass === ADMIN_PASSWORD) {
-            document.getElementById('view-employee').classList.add('hidden');
-            document.getElementById('view-admin').classList.remove('hidden');
-            renderEmployees();
-            renderRecords();
-        } else if (pass !== null) {
-            alert('รหัสผ่านไม่ถูกต้อง');
-        }
+    function promptAdminLogin() {
+        modalSystem.showPrompt('ผู้ดูแลระบบ', 'กรุณาใส่รหัสผ่านเพื่อเข้าสู่ระบบ', (pass) => {
+            if (pass === ADMIN_PASSWORD) {
+                document.getElementById('view-employee').classList.add('hidden');
+                document.getElementById('view-admin').classList.remove('hidden');
+                renderEmployees();
+                renderRecords();
+            } else if (pass !== null && pass !== '') {
+                modalSystem.showAlert('error', 'ผิดพลาด', 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง');
+            }
+        });
     }
 
     function logoutAdmin() {
@@ -441,8 +518,8 @@
         const name = document.getElementById('newEmpName').value.trim();
         const pin = document.getElementById('newEmpPin').value.trim();
         
-        if (!name || pin.length !== 4) return alert('กรุณากรอกชื่อ และ PIN 4 หลัก');
-        if (employees.find(e => e.name === name)) return alert('มีชื่อนี้ในระบบแล้ว');
+        if (!name || pin.length !== 4) return modalSystem.showAlert('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกชื่อ และตั้ง PIN ให้ครบ 4 หลัก');
+        if (employees.find(e => e.name === name)) return modalSystem.showAlert('warning', 'ชื่อซ้ำ', 'มีชื่อพนักงานคนนี้ในระบบแล้ว');
 
         employees.push({ name, pin });
         saveData();
@@ -450,15 +527,16 @@
         renderEmployeeButtons();
         document.getElementById('newEmpName').value = '';
         document.getElementById('newEmpPin').value = '';
+        modalSystem.showAlert('success', 'เพิ่มสำเร็จ', `เพิ่มพนักงาน ${name} ลงในระบบแล้ว`);
     }
 
     function deleteEmployee(name) {
-        if (confirm(`ลบข้อมูล ${name} หรือไม่?`)) {
+        modalSystem.showConfirm('ยืนยันการลบ', `คุณแน่ใจหรือไม่ที่จะลบข้อมูลของ ${name} ออกจากระบบ?`, () => {
             employees = employees.filter(e => e.name !== name);
             saveData();
             renderEmployees();
             renderEmployeeButtons();
-        }
+        });
     }
 
     function renderEmployees() {
@@ -496,13 +574,10 @@
         }).join('');
     }
 
-    // ================= ดาวน์โหลด CSV =================
     function exportToCSV() {
-        if (records.length === 0) return alert('ไม่มีข้อมูลประวัติการทำงาน');
+        if (records.length === 0) return modalSystem.showAlert('info', 'ไม่มีข้อมูล', 'ยังไม่มีประวัติการทำงานให้ดาวน์โหลดครับ');
 
-        let csvContent = "\uFEFF"; 
-        csvContent += "วันที่,ชื่อพนักงาน,เวลาเข้า,เวลาออก,ชั่วโมงทำงาน,สถานะ\n";
-
+        let csvContent = "\uFEFFวันที่,ชื่อพนักงาน,เวลาเข้า,เวลาออก,ชั่วโมงทำงาน,สถานะ\n";
         records.forEach(record => {
             const dateStr = new Date(record.timeIn).toLocaleDateString('th-TH');
             const name = record.name;
@@ -519,17 +594,13 @@
                 durationStr = `${hours} ชม. ${minutes} นาที`;
                 status = 'เสร็จสิ้น';
             }
-
             csvContent += `"${dateStr}","${name}","${timeInStr}","${timeOutStr}","${durationStr}","${status}"\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        const today = new Date().toISOString().split('T')[0];
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Timesheet_${today}.csv`);
-        
+        link.href = URL.createObjectURL(blob);
+        link.download = `Timesheet_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
