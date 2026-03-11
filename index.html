@@ -3,181 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTime Cloud</title>
+    <title>ProTime Admin - Real-time</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --bg: #fdfeff;
-            --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-sub: #64748b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --border: #f1f5f9;
+            --primary: #6366f1; --bg: #f8fafc; --surface: #ffffff;
+            --text-main: #1e293b; --text-sub: #64748b;
+            --success: #10b981; --danger: #ef4444; --border: #e2e8f0;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); 
-            margin: 0; display: flex; justify-content: center; min-height: 100vh; color: var(--text-main);
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; color: var(--text-main); }
+        .container { width: 100%; max-width: 500px; margin: auto; padding: 20px; }
 
-        .container { width: 100%; max-width: 420px; padding: 24px; position: relative; }
+        .page { display: none; background: var(--surface); padding: 24px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        .page.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Card Styles */
-        .page { 
-            display: none; background: var(--surface); padding: 32px 24px; border-radius: 32px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.02), 0 8px 10px -6px rgba(0,0,0,0.02);
-            border: 1px solid var(--border);
-        }
-        .page.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        /* Admin Dashboard Styles */
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #f1f5f9; padding: 15px; border-radius: 20px; text-align: center; }
+        .stat-card div:first-child { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; }
+        .stat-card div:last-child { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .search-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; outline: none; font-family: inherit; }
 
-        /* Typography */
-        h1 { font-size: 1.5rem; font-weight: 700; text-align: center; margin: 0 0 8px 0; letter-spacing: -0.02em; }
-        .subtitle { color: var(--text-sub); font-size: 0.9rem; text-align: center; margin-bottom: 32px; }
+        .live-table-wrap { overflow-x: auto; margin-top: 10px; }
+        .live-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .live-table th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border); color: var(--text-sub); }
+        .live-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
 
-        /* Inputs */
-        .input-group { margin-bottom: 20px; }
-        .input-field {
-            width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 16px;
-            font-size: 1.25rem; text-align: center; font-weight: 600; transition: 0.2s; outline: none; background: #f8fafc;
-        }
-        .input-field:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+        .badge-in { background: #dcfce7; color: #166534; }
+        .badge-out { background: #fee2e2; color: #991b1b; }
+        .badge-leave { background: #fef3c7; color: #92400e; }
 
-        /* Buttons */
-        .btn {
-            width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 600;
-            cursor: pointer; font-size: 1rem; transition: all 0.2s ease;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
+        .btn { width: 100%; padding: 14px; border-radius: 15px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-excel { background: #1d6f42; color: white; margin-top: 15px; }
+        .logout-link { display: block; text-align: center; margin-top: 20px; color: var(--text-sub); font-size: 0.8rem; cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; }
 
-        /* Dashboard Grid */
-        .status-pill {
-            background: #f1f5f9; padding: 12px; border-radius: 16px; font-size: 0.85rem;
-            text-align: center; margin-bottom: 24px; color: var(--text-main); font-weight: 500;
-        }
-
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .action-card {
-            background: #fff; border: 2px solid var(--border); padding: 20px 16px; border-radius: 20px;
-            display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s;
-        }
-        .action-card:not(:disabled):hover { border-color: var(--primary); background: #f5f7ff; }
-        .action-card:disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
-        .action-card i { font-size: 1.5rem; }
-
-        /* History Table */
-        .history-wrap { margin-top: 32px; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .history-header span { font-size: 0.95rem; font-weight: 700; }
-        
-        .history-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid var(--border);
-        }
-        .hist-info div:first-child { font-weight: 600; font-size: 0.85rem; }
-        .hist-info div:last-child { font-size: 0.75rem; color: var(--text-sub); }
-        .badge { padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .badge-in { background: #dcfce7; color: #10b981; }
-        .badge-out { background: #fee2e2; color: #ef4444; }
-
-        .logout-btn {
-            background: none; border: none; color: var(--danger); font-size: 0.85rem; 
-            font-weight: 600; width: 100%; margin-top: 32px; cursor: pointer; opacity: 0.7;
-        }
+        /* Login & Dashboard Styles (ย่อส่วนจากของเดิม) */
+        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 15px; text-align: center; font-size: 1.2rem; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .action-btn { background: #fff; border: 1px solid var(--border); padding: 20px; border-radius: 20px; cursor: pointer; font-weight: 700; }
+        .action-btn:disabled { opacity: 0.3; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="page-login" class="page">
-        <h1>Welcome Back</h1>
-        <p class="subtitle">กรอกรหัส PIN เพื่อลงเวลาทำงาน</p>
-        <div class="input-group">
-            <input type="password" id="login-pin" class="input-field" placeholder="••••" maxlength="4" inputmode="numeric">
-        </div>
-        <button class="btn btn-primary" onclick="handleLogin()">เข้าสู่ระบบ</button>
+        <h2 style="text-align:center">ProTime Cloud</h2>
+        <input type="password" id="login-pin" class="input-field" placeholder="กรอกรหัส PIN" maxlength="4">
+        <button class="btn" style="background:var(--primary); color:white" onclick="handleLogin()">Sign In</button>
     </div>
 
     <div id="page-dashboard" class="page">
-        <h1 id="welcome-text" style="text-align: left;">Dashboard</h1>
-        <p class="subtitle" style="text-align: left; margin-bottom: 20px;">สรุปสถานะการทำงานของคุณ</p>
-        
-        <div id="status-info" class="status-pill">กำลังดึงข้อมูล...</div>
-        
+        <h2 id="welcome-text">Dashboard</h2>
+        <div id="status-info" style="text-align:center; margin-bottom:20px; font-weight:600; color:var(--primary)">กำลังโหลด...</div>
         <div class="action-grid">
-            <button id="btn-in" class="action-card" onclick="record('เข้างาน')">
-                <span style="font-size: 1.5rem;">📥</span>
-                <span style="color: var(--success); font-weight: 700;">Check In</span>
-            </button>
-            <button id="btn-out" class="action-card" onclick="record('ออกงาน')">
-                <span style="font-size: 1.5rem;">📤</span>
-                <span style="color: var(--danger); font-weight: 700;">Check Out</span>
-            </button>
+            <button id="btn-in" class="action-btn" onclick="record('เข้างาน')" style="color:var(--success)">Check In</button>
+            <button id="btn-out" class="action-btn" onclick="record('ออกงาน')" style="color:var(--danger)">Check Out</button>
         </div>
-        <button id="btn-leave" class="btn" style="background: #fff; border: 2px solid var(--border); color: var(--text-sub); border-radius: 20px;" onclick="record('ลา')">
-            🌴 แจ้งลาหยุด
-        </button>
-
-        <div class="history-wrap">
-            <div class="history-header">
-                <span>Recent Activity</span>
-            </div>
-            <div id="history-list">
-                </div>
-        </div>
-
-        <button class="logout-btn" onclick="logout()">Sign Out</button>
+        <button class="btn" style="background:#f1f5f9" onclick="record('ลา')">แจ้งลาหยุด</button>
+        <button class="logout-link" onclick="logout()">Logout</button>
     </div>
 
     <div id="page-admin" class="page">
-        <h1 style="text-align: left;">Admin Console</h1>
-        <p class="subtitle" style="text-align: left;">จัดการข้อมูลและออกรายงาน</p>
-        
-        <div style="background: #f8fafc; padding: 24px; border-radius: 24px; margin-bottom: 20px; text-align: center;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
-            <div style="font-weight: 700; margin-bottom: 4px;">สรุปรายงานประจำเดือน</div>
-            <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 20px;">ไฟล์ Excel ประกอบด้วยข้อมูลพนักงานทุกคน</div>
-            <button class="btn btn-primary" onclick="exportFromFirestore()">Download Report (.xlsx)</button>
+        <div class="admin-header">
+            <h2 style="margin:0">Admin Panel</h2>
+            <button onclick="logout()" style="border:none; background:none; color:var(--danger); font-weight:600; cursor:pointer">Exit</button>
         </div>
-        
-        <button class="logout-btn" style="color: var(--text-sub)" onclick="logout()">Back to Home</button>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>เข้างานแล้ว (วันนี้)</div>
+                <div id="stat-active">0</div>
+            </div>
+            <div class="stat-card">
+                <div>แจ้งลา (วันนี้)</div>
+                <div id="stat-leave">0</div>
+            </div>
+        </div>
+
+        <input type="text" id="admin-search" class="search-box" placeholder="ค้นหาชื่อพนักงาน..." onkeyup="filterTable()">
+
+        <div style="font-weight:700; font-size:0.9rem; margin-bottom:10px">Live Activity Monitor</div>
+        <div class="live-table-wrap">
+            <table class="live-table">
+                <thead>
+                    <tr>
+                        <th>พนักงาน</th>
+                        <th>กิจกรรม</th>
+                        <th>เวลา</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-live-body">
+                    </tbody>
+            </table>
+        </div>
+
+        <button class="btn btn-excel" onclick="exportFromFirestore()">📊 Export Excel Report</button>
     </div>
 </div>
 
 <script>
-    // Firebase Config (คงเดิม)
     const firebaseConfig = {
-      apiKey: "AIzaSyD-RzkBZ3lXFodonqoMFIrpuCwQ4JPr71g",
-      authDomain: "we-la-tham-ngan.firebaseapp.com",
-      projectId: "we-la-tham-ngan",
-      storageBucket: "we-la-tham-ngan.firebasestorage.app",
-      messagingSenderId: "321115203647",
-      appId: "1:321115203647:web:9d8d11ed78c4e949e3b08a",
-      measurementId: "G-71P7D9NKJK"
+        apiKey: "AIzaSyD-RzkBZ3lXFodonqoMFIrpuCwQ4JPr71g",
+        authDomain: "we-la-tham-ngan.firebaseapp.com",
+        projectId: "we-la-tham-ngan",
+        storageBucket: "we-la-tham-ngan.firebasestorage.app",
+        messagingSenderId: "321115203647",
+        appId: "1:321115203647:web:9d8d11ed78c4e949e3b08a",
+        measurementId: "G-71P7D9NKJK"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const USERS = { "1234": "Jantra", "5678": "Panwasa", "9999": "Admin" };
-    
     let currentUser = null;
+    let unsubscribeAdmin = null; // สำหรับยกเลิกการฟังข้อมูลแบบ Real-time
 
     window.onload = function() {
-        const savedUser = localStorage.getItem('activeUser');
-        if (savedUser) {
-            currentUser = savedUser;
-            if (currentUser === 'Admin') showPage('page-admin');
-            else { showPage('page-dashboard'); initDashboard(); }
-        } else { showPage('page-login'); }
+        const saved = localStorage.getItem('activeUser');
+        if (saved) { currentUser = saved; showPage(currentUser === 'Admin' ? 'page-admin' : 'page-dashboard'); initApp(); }
+        else { showPage('page-login'); }
     };
 
     function handleLogin() {
@@ -185,80 +138,89 @@
         if (USERS[pin]) {
             currentUser = USERS[pin];
             localStorage.setItem('activeUser', currentUser);
-            document.getElementById('login-pin').value = '';
-            if (currentUser === 'Admin') showPage('page-admin');
-            else { showPage('page-dashboard'); initDashboard(); }
+            showPage(currentUser === 'Admin' ? 'page-admin' : 'page-dashboard');
+            initApp();
         } else { alert('PIN ไม่ถูกต้อง'); }
     }
 
-    function initDashboard() {
-        document.getElementById('welcome-text').innerText = "Hi, " + currentUser;
-        refreshData();
+    function initApp() {
+        if (currentUser === 'Admin') { startAdminMonitor(); } 
+        else { document.getElementById('welcome-text').innerText = "Hi, " + currentUser; refreshStaffStatus(); }
     }
 
-    async function refreshData() {
-        await checkLastStatus();
-        await fetchHistory();
-    }
+    // --- ส่วน Admin Real-time Logic ---
+    function startAdminMonitor() {
+        const today = new Date().toLocaleDateString('th-TH');
+        
+        // ฟังข้อมูลแบบ Real-time (onSnapshot)
+        unsubscribeAdmin = db.collection("attendance_logs")
+            .orderBy("timestamp", "desc")
+            .limit(20)
+            .onSnapshot((snapshot) => {
+                const body = document.getElementById('admin-live-body');
+                let html = '';
+                let activeToday = new Set();
+                let leaveToday = 0;
 
-    async function checkLastStatus() {
-        const statusBox = document.getElementById('status-info');
-        const bIn = document.getElementById('btn-in');
-        const bOut = document.getElementById('btn-out');
-        try {
-            const snap = await db.collection("attendance_logs")
-                .where("name", "==", currentUser).orderBy("timestamp", "desc").limit(1).get();
-            if (snap.empty) {
-                statusBox.innerHTML = "Status: <b>Ready to Work</b>";
-                bIn.disabled = false; bOut.disabled = true;
-            } else {
-                const type = snap.docs[0].data().type;
-                statusBox.innerHTML = `สถานะล่าสุด: <b>${type}</b>`;
-                bIn.disabled = (type === "เข้างาน");
-                bOut.disabled = (type !== "เข้างาน");
-            }
-        } catch (e) { statusBox.innerText = "Error Loading Status"; }
-    }
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const badgeClass = d.type === 'เข้างาน' ? 'badge-in' : (d.type === 'ออกงาน' ? 'badge-out' : 'badge-leave');
+                    
+                    // สรุปยอดสถิติเฉพาะของวันนี้
+                    if(d.date === today) {
+                        if(d.type === 'เข้างาน') activeToday.add(d.name);
+                        if(d.type === 'ลา') leaveToday++;
+                    }
 
-    async function fetchHistory() {
-        const list = document.getElementById('history-list');
-        try {
-            const snap = await db.collection("attendance_logs")
-                .where("name", "==", currentUser).orderBy("timestamp", "desc").limit(5).get();
-            if (snap.empty) { list.innerHTML = "<p style='font-size:0.8rem; color:#94a3b8; text-align:center;'>No recent activity</p>"; return; }
-            let html = '';
-            snap.forEach(doc => {
-                const d = doc.data();
-                const badge = d.type === 'เข้างาน' ? 'badge-in' : 'badge-out';
-                html += `
-                <div class="history-item">
-                    <div class="hist-info">
-                        <div>${d.date}</div>
-                        <div>${d.time}</div>
-                    </div>
-                    <span class="badge ${badge}">${d.type}</span>
-                </div>`;
+                    html += `
+                        <tr class="log-row">
+                            <td style="font-weight:600">${d.name}</td>
+                            <td><span class="badge ${badgeClass}">${d.type}</span></td>
+                            <td style="color:var(--text-sub)">${d.time}</td>
+                        </tr>`;
+                });
+
+                body.innerHTML = html;
+                document.getElementById('stat-active').innerText = activeToday.size;
+                document.getElementById('stat-leave').innerText = leaveToday;
             });
-            list.innerHTML = html;
-        } catch (e) { console.error(e); }
+    }
+
+    function filterTable() {
+        const input = document.getElementById('admin-search').value.toLowerCase();
+        const rows = document.getElementsByClassName('log-row');
+        Array.from(rows).forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
+        });
+    }
+
+    // --- ส่วน Staff Logic ---
+    async function refreshStaffStatus() {
+        const snap = await db.collection("attendance_logs").where("name", "==", currentUser).orderBy("timestamp", "desc").limit(1).get();
+        const statusBox = document.getElementById('status-info');
+        if (snap.empty) { statusBox.innerText = "สถานะ: พร้อมเข้างาน"; }
+        else {
+            const last = snap.docs[0].data().type;
+            statusBox.innerText = "สถานะล่าสุด: " + last;
+            document.getElementById('btn-in').disabled = (last === 'เข้างาน');
+            document.getElementById('btn-out').disabled = (last !== 'เข้างาน');
+        }
     }
 
     function record(type) {
-        let note = "-";
-        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
         const entry = {
-            name: currentUser, type: type, date: new Date().toLocaleDateString('th-TH'),
+            name: currentUser, type: type, 
+            date: new Date().toLocaleDateString('th-TH'),
             time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-            note: note, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-        db.collection("attendance_logs").add(entry).then(() => { refreshData(); });
+        db.collection("attendance_logs").add(entry).then(() => { if(currentUser !== 'Admin') refreshStaffStatus(); });
     }
 
     function logout() {
-        if(confirm("Confirm Sign Out?")) {
-            localStorage.removeItem('activeUser');
-            location.reload();
-        }
+        if(unsubscribeAdmin) unsubscribeAdmin(); // หยุดดึงข้อมูล Real-time
+        localStorage.removeItem('activeUser');
+        location.reload();
     }
 
     function showPage(id) {
@@ -268,14 +230,11 @@
 
     function exportFromFirestore() {
         db.collection("attendance_logs").orderBy("timestamp", "desc").get().then((qs) => {
-            const logs = qs.docs.map(doc => {
-                const d = doc.data();
-                return { "พนักงาน": d.name, "กิจกรรม": d.type, "วันที่": d.date, "เวลา": d.time, "หมายเหตุ": d.note };
-            });
+            const logs = qs.docs.map(doc => doc.data());
             const ws = XLSX.utils.json_to_sheet(logs);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-            XLSX.writeFile(wb, "Professional_Report.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Report");
+            XLSX.writeFile(wb, "Staff_Report_Admin.xlsx");
         });
     }
 </script>
