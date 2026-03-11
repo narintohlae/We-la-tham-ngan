@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work Log: Jantra & Panwasa</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -11,6 +12,7 @@
             --danger: #dc2626;
             --warning: #f59e0b;
             --ot: #8b5cf6;
+            --excel: #1d6f42; /* สีเขียว Excel */
             --bg: #f1f5f9;
         }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); display: flex; justify-content: center; padding: 20px; }
@@ -46,14 +48,17 @@
         .status-ot { color: var(--ot); font-weight: bold; }
         
         .footer-btns { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        .export-btn { color: var(--primary); background: none; border: 1px solid var(--primary); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+        .export-btn { 
+            background-color: var(--excel); color: white; border: none; padding: 10px 20px; 
+            border-radius: 8px; font-size: 0.9rem; cursor: pointer; width: 100%;
+        }
         .clear-btn { color: #94a3b8; background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🕒 ระบบลงเวลาพนักงาน</h2>
+    <h2>🕒 ระบบลงเวลา Jantra & Panwasa</h2>
 
     <div class="employee-section">
         <div class="employee-name">👤 Jantra <span>(PIN: 1234)</span></div>
@@ -80,7 +85,7 @@
     <div class="log-container" id="logContainer"></div>
 
     <div class="footer-btns">
-        <button class="export-btn" onclick="exportToCSV()">📂 ดาวน์โหลดข้อมูล (Excel/CSV)</button>
+        <button class="export-btn" onclick="exportToExcel()">📊 Export to Excel (.xlsx)</button>
         <button class="clear-btn" onclick="clearLogs()">ล้างประวัติทั้งหมด</button>
     </div>
 </div>
@@ -116,53 +121,56 @@
         const dateStr = now.toLocaleDateString('th-TH');
         const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
         
-        const entry = { name, type, date: dateStr, time: timeStr, note: note || "-" };
-        let logs = JSON.parse(localStorage.getItem('staffLogs')) || [];
+        const entry = { 
+            "ชื่อพนักงาน": name, 
+            "ประเภท": type, 
+            "วันที่": dateStr, 
+            "เวลา": timeStr, 
+            "หมายเหตุ": note || "-" 
+        };
+        
+        let logs = JSON.parse(localStorage.getItem('staffLogs_v2')) || [];
         logs.unshift(entry);
-        localStorage.setItem('staffLogs', JSON.stringify(logs));
+        localStorage.setItem('staffLogs_v2', JSON.stringify(logs));
         displayLogs();
     }
 
     function displayLogs() {
-        const logs = JSON.parse(localStorage.getItem('staffLogs')) || [];
+        const logs = JSON.parse(localStorage.getItem('staffLogs_v2')) || [];
         const container = document.getElementById('logContainer');
         container.innerHTML = logs.length === 0 ? '<p style="text-align:center; color:#94a3b8; margin-top:20px;">ไม่มีข้อมูลบันทึก</p>' : '';
 
         logs.forEach(log => {
-            let statusClass = `status-${log.type === 'เข้างาน' ? 'in' : log.type === 'ออกงาน' ? 'out' : log.type === 'ลา' ? 'leave' : 'ot'}`;
+            let statusClass = `status-${log["ประเภท"] === 'เข้างาน' ? 'in' : log["ประเภท"] === 'ออกงาน' ? 'out' : log["ประเภท"] === 'ลา' ? 'leave' : 'ot'}`;
             container.innerHTML += `
                 <div class="log-item">
                     <div class="log-header">
-                        <span><strong>${log.name}</strong></span>
-                        <span class="${statusClass}">${log.type}</span>
-                        <span style="color: #64748b;">${log.date} ${log.time}</span>
+                        <span><strong>${log["ชื่อพนักงาน"]}</strong></span>
+                        <span class="${statusClass}">${log["ประเภท"]}</span>
+                        <span style="color: #64748b;">${log["วันที่"]} ${log["เวลา"]}</span>
                     </div>
-                    ${log.note !== "-" ? `<div class="note-text">📝 ${log.note}</div>` : ''}
+                    ${log["หมายเหตุ"] !== "-" ? `<div class="note-text">📝 ${log["หมายเหตุ"]}</div>` : ''}
                 </div>`;
         });
     }
 
-    function exportToCSV() {
-        const logs = JSON.parse(localStorage.getItem('staffLogs')) || [];
-        if (logs.length === 0) return alert('ไม่มีข้อมูลให้ดาวน์โหลด');
+    function exportToExcel() {
+        const logs = JSON.parse(localStorage.getItem('staffLogs_v2')) || [];
+        if (logs.length === 0) return alert('ไม่มีข้อมูลให้ส่งออก');
 
-        let csv = '\uFEFFชื่อ,ประเภท,วันที่,เวลา,หมายเหตุ\n';
-        logs.forEach(log => {
-            csv += `${log.name},${log.type},${log.date},${log.time},${log.note}\n`;
-        });
+        // สร้าง Worksheet จากข้อมูล JSON
+        const worksheet = XLSX.utils.json_to_sheet(logs);
+        // สร้าง Workbook
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "WorkLogs");
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", "work_logs.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // ส่งออกไฟล์เป็นชื่อ work_logs.xlsx
+        XLSX.writeFile(workbook, "work_logs_jantra_panwasa.xlsx");
     }
 
     function clearLogs() {
         if(confirm('ยืนยันลบข้อมูลทั้งหมด?')) {
-            localStorage.removeItem('staffLogs');
+            localStorage.removeItem('staffLogs_v2');
             displayLogs();
         }
     }
