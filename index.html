@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking - Secure Kiosk</title>
+    <title>Time Tracking - Ultra Minimal Kiosk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -90,7 +90,7 @@
         }
 
         /* PIN Dots Indicator */
-        .pin-display { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
+        .pin-display { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; transition: opacity 0.3s; }
         .pin-dot {
             width: 18px;
             height: 18px;
@@ -100,10 +100,9 @@
             transition: all 0.2s ease;
         }
         .pin-dot.filled { background-color: var(--primary); border-color: var(--primary); transform: scale(1.1); }
-        .pin-dot.success { background-color: var(--success); border-color: var(--success); }
 
         /* Numpad */
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; margin: 0 auto 30px auto; }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; margin: 0 auto 30px auto; transition: opacity 0.3s; }
         .num-btn {
             background-color: #f9fafb; border: 1px solid var(--border-light); border-radius: 16px; padding: 18px 0;
             font-size: 1.5em; font-weight: 500; font-family: 'Prompt', sans-serif; color: var(--text-main);
@@ -111,7 +110,6 @@
         }
         .num-btn:active { background-color: var(--border-light); transform: scale(0.95); }
         .num-btn-del { color: var(--danger); background-color: #fee2e2; border-color: #fca5a5; }
-        .num-btn:disabled { opacity: 0.5; cursor: not-allowed; } /* ปิดปุ่มตอนรหัสถูกแล้ว */
 
         /* Action Buttons (ถูกซ่อนไว้ตอนแรก) */
         .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
@@ -177,10 +175,10 @@
             <div class="divider" style="margin: 20px 0;"></div>
             
             <div class="section-title" id="selected-emp-text" style="color: var(--primary); font-weight: 500; font-size: 1.1em;">
-                กรุณาใส่รหัส PIN 4 หลัก
+                ใส่รหัส PIN ของคุณ
             </div>
 
-            <div class="pin-display">
+            <div class="pin-display" id="pin-display">
                 <div class="pin-dot" id="dot-1"></div>
                 <div class="pin-dot" id="dot-2"></div>
                 <div class="pin-dot" id="dot-3"></div>
@@ -267,7 +265,6 @@
     let records = JSON.parse(localStorage.getItem('timeRecords_v2')) || [];
     let employees = JSON.parse(localStorage.getItem('employees_v2')) || [];
     
-    // ตัวแปรเก็บรหัส PIN ที่กำลังกด
     let currentPinCode = "";
     let isPinVerified = false;
 
@@ -302,14 +299,20 @@
 
     function selectEmployee(name) {
         document.getElementById('empName').value = name;
+        
+        // รีเซ็ตการซ่อน/แสดง กลับไปเป็นโหมดพร้อมใส่รหัส
+        document.getElementById('selected-emp-text').classList.remove('hidden');
+        document.getElementById('pin-display').classList.remove('hidden');
+        document.getElementById('numpad').classList.remove('hidden');
+        document.getElementById('action-buttons').classList.add('hidden');
+        
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-emp-${name}`).classList.add('active');
         document.getElementById('selected-emp-text').innerText = `ใส่รหัส PIN ของคุณ: ${name}`;
         
-        clearNum(); // รีเซ็ตทุกอย่าง
+        clearNum(); 
         document.getElementById('step2-container').classList.remove('hidden-step');
         
-        // เลื่อนหน้าจอลงมานิดนึงให้เห็น Numpad ชัดๆ (เผื่อหน้าจอมือถือเล็ก)
         setTimeout(() => {
             document.getElementById('step2-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
@@ -318,29 +321,22 @@
     renderEmployeeButtons();
 
     // ================= ระบบแป้นพิมพ์ & การตรวจสอบรหัส =================
-    function updatePinDots(isSuccess = false) {
+    function updatePinDots() {
         for (let i = 1; i <= 4; i++) {
             const dot = document.getElementById(`dot-${i}`);
-            dot.classList.remove('filled', 'success'); // ล้างสถานะเก่าออกก่อน
-            
+            dot.classList.remove('filled');
             if (i <= currentPinCode.length) {
-                if (isSuccess) {
-                    dot.classList.add('success'); // ถ้ารหัสถูก ให้จุดไข่ปลาเป็นสีเขียว
-                } else {
-                    dot.classList.add('filled');
-                }
+                dot.classList.add('filled');
             }
         }
     }
 
     function pressNum(num) {
-        // ถ้ายืนยันรหัสถูกไปแล้ว จะกดเลขเพิ่มไม่ได้
         if (isPinVerified || currentPinCode.length >= 4) return;
-
         currentPinCode += num;
         updatePinDots();
 
-        // เมื่อพิมพ์ครบ 4 ตัว ให้ตรวจรหัสทันที
+        // เมื่อพิมพ์ครบ 4 ตัว ให้ตรวจรหัส
         if (currentPinCode.length === 4) {
             verifyPin();
         }
@@ -356,37 +352,26 @@
         currentPinCode = "";
         isPinVerified = false;
         updatePinDots();
-        
-        // ปิดปุ่ม เข้า/ออกงาน
-        document.getElementById('action-buttons').classList.add('hidden');
-        
-        // เปิดการใช้งาน Numpad คืน
-        document.querySelectorAll('.num-btn').forEach(btn => btn.disabled = false);
-        document.getElementById('selected-emp-text').innerText = `ใส่รหัส PIN ของคุณ: ${document.getElementById('empName').value}`;
-        document.getElementById('selected-emp-text').style.color = "var(--primary)";
     }
 
     function verifyPin() {
         const name = document.getElementById('empName').value;
         const validEmp = employees.find(e => e.name === name && e.pin === currentPinCode);
 
-        // ใส่ delay เล็กน้อยเพื่อให้ระบบวาดจุดที่ 4 ให้เสร็จก่อนเตือน
+        // หน่วงเวลาเล็กน้อยเพื่อให้เห็นจุดไข่ปลาที่ 4 ปรากฏก่อนที่จะเปลี่ยนหน้าจอ
         setTimeout(() => {
             if (validEmp) {
-                // กรณี: รหัสถูกต้อง
                 isPinVerified = true;
-                updatePinDots(true); // เปลี่ยนจุดไข่ปลาเป็นสีเขียว
                 
-                document.getElementById('selected-emp-text').innerText = "✅ รหัสถูกต้อง กรุณาเลือกรายการ";
-                document.getElementById('selected-emp-text').style.color = "var(--success)";
+                // ถ้ารหัสถูก ให้ซ่อนกล่องข้อความ จุดไข่ปลา และแป้นพิมพ์ทิ้งไปเลย
+                document.getElementById('selected-emp-text').classList.add('hidden');
+                document.getElementById('pin-display').classList.add('hidden');
+                document.getElementById('numpad').classList.add('hidden');
                 
-                // โชว์ปุ่ม เข้า/ออก งาน
+                // โชว์ปุ่ม เข้า/ออก งาน ขึ้นมาแทน
                 document.getElementById('action-buttons').classList.remove('hidden');
-                
-                // ล็อก Numpad กันคนกดมั่ว
-                document.querySelectorAll('.num-btn').forEach(btn => btn.disabled = true);
             } else {
-                // กรณี: รหัสผิด
+                // กรณีรหัสผิด
                 alert('❌ รหัส PIN ไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง');
                 clearNum();
             }
@@ -396,6 +381,13 @@
     function resetToHome() {
         document.getElementById('step2-container').classList.add('hidden-step');
         document.getElementById('empName').value = ''; 
+        
+        // คืนค่า Element ที่ถูกซ่อนไว้ให้กลับมาแสดง (เผื่อไว้ให้คนต่อไปใช้)
+        document.getElementById('selected-emp-text').classList.remove('hidden');
+        document.getElementById('pin-display').classList.remove('hidden');
+        document.getElementById('numpad').classList.remove('hidden');
+        document.getElementById('action-buttons').classList.add('hidden');
+
         clearNum();  
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
     }
@@ -403,8 +395,6 @@
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
         const name = document.getElementById('empName').value;
-        
-        // ไม่ต้องเช็ค PIN ซ้ำแล้ว เพราะปุ่มนี้จะโผล่มาเฉพาะตอน PIN ถูกต้องเท่านั้น
         const activeRecordIndex = records.findIndex(r => r.name === name && !r.timeOut);
         const now = new Date().toISOString();
 
@@ -425,7 +415,7 @@
         }
 
         saveData();
-        resetToHome(); // กลับสู่หน้าจอว่างๆ พร้อมให้คนต่อไปกด
+        resetToHome(); 
     }
 
     // ================= ส่วนของ Admin =================
