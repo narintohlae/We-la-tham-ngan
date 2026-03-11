@@ -19,8 +19,9 @@
         .input-field { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 12px; text-align: center; font-size: 1.1rem; box-sizing: border-box; }
         .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-main { background: var(--primary); color: white; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+        .action-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; } /* ปรับเป็นคอลัมน์เดียวหรือคู่ตามความสวยงาม */
         .action-btn { background: white; border: 1px solid var(--border); padding: 18px 10px; border-radius: 16px; font-weight: 600; cursor: pointer; }
+        .action-btn:hover { border-color: var(--primary); background: #f8fafc; }
         .logout-link { display: block; text-align: center; margin-top: 20px; color: #64748b; font-size: 0.8rem; cursor: pointer; background: none; border: none; width: 100%; text-decoration: underline; }
     </style>
 </head>
@@ -29,7 +30,7 @@
 <div class="container">
     <div id="page-login" class="page active">
         <h1>Cloud Login</h1>
-        <p class="subtitle">ระบบบันทึกเวลา (Firestore)</p>
+        <p class="subtitle">ระบบบันทึกเวลาทำงาน</p>
         <input type="password" id="login-pin" class="input-field" placeholder="กรอก PIN" maxlength="4">
         <button class="btn btn-main" onclick="handleLogin()">เข้าสู่ระบบ</button>
     </div>
@@ -37,10 +38,9 @@
     <div id="page-dashboard" class="page">
         <h1 id="welcome-text">Dashboard</h1>
         <div class="action-grid">
-            <button class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In</button>
-            <button class="action-btn" onclick="record('ออกงาน')" style="color: #ef4444">Check Out</button>
-            <button class="action-btn" onclick="record('โอที')" style="color: #6366f1">Overtime</button>
-            <button class="action-btn" onclick="record('ลา')" style="color: #f59e0b">Leave</button>
+            <button class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In (เข้างาน)</button>
+            <button class="action-btn" onclick="record('ออกงาน')" style="color: #ef4444">Check Out (ออกงาน)</button>
+            <button class="action-btn" onclick="record('ลา')" style="color: #f59e0b">Leave (แจ้งลา)</button>
         </div>
         <button class="logout-link" onclick="logout()">Logout</button>
     </div>
@@ -63,9 +63,7 @@
       measurementId: "G-71P7D9NKJK"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    // Initialize Firestore
     const db = firebase.firestore();
 
     const USERS = { "1234": "Jantra", "5678": "Panwasa", "9999": "Admin" };
@@ -85,8 +83,9 @@
 
     function record(type) {
         let note = "-";
-        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
-        if (type === 'โอที') note = confirm("กด OK เพื่อเริ่มโอที / Cancel เพื่อจบโอที") ? "เริ่มโอที" : "จบโอที";
+        if (type === 'ลา') {
+            note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
+        }
 
         const entry = {
             name: currentUser,
@@ -94,23 +93,20 @@
             date: new Date().toLocaleDateString('th-TH'),
             time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
             note: note,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp() // ใช้ timestamp ของ Firestore
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // บันทึกข้อมูลลงใน Collection ชื่อ "attendance_logs"
         db.collection("attendance_logs").add(entry)
             .then(() => {
-                alert('บันทึกข้อมูลลง Firestore สำเร็จ!');
+                alert('บันทึกข้อมูลสำเร็จ!');
                 logout();
             })
             .catch((error) => {
-                console.error("Error adding document: ", error);
                 alert("เกิดข้อผิดพลาด: " + error.message);
             });
     }
 
     function exportFromFirestore() {
-        // ดึงข้อมูลทั้งหมดจาก Firestore เรียงตามเวลาล่าสุด
         db.collection("attendance_logs").orderBy("timestamp", "desc").get()
             .then((querySnapshot) => {
                 const logs = [];
@@ -130,10 +126,10 @@
                 const ws = XLSX.utils.json_to_sheet(logs);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-                XLSX.writeFile(wb, "Staff_Report_Firestore.xlsx");
+                XLSX.writeFile(wb, "Staff_Report.xlsx");
             })
             .catch((error) => {
-                alert("Error fetching data: " + error.message);
+                alert("Error: " + error.message);
             });
     }
 
