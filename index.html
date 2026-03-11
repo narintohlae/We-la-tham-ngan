@@ -3,110 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTime Admin - Real-time</title>
+    <title>ProTime Ultra - Next Gen</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1; --bg: #f8fafc; --surface: #ffffff;
-            --text-main: #1e293b; --text-sub: #64748b;
-            --success: #10b981; --danger: #ef4444; --border: #e2e8f0;
+            --accent: #6366f1; --accent-light: #818cf8; --bg: #0f172a; --surface: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1); --text-primary: #f8fafc; --text-secondary: #94a3b8;
+            --success: #10b981; --danger: #f43f5e;
         }
 
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; color: var(--text-main); }
-        .container { width: 100%; max-width: 500px; margin: auto; padding: 20px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center; color: var(--text-primary);
+        }
 
-        .page { display: none; background: var(--surface); padding: 24px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        .page.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .container { width: 100%; max-width: 440px; padding: 20px; }
 
-        /* Admin Dashboard Styles */
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: #f1f5f9; padding: 15px; border-radius: 20px; text-align: center; }
-        .stat-card div:first-child { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; }
-        .stat-card div:last-child { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .glass-card {
+            background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 40px; padding: 35px 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: none;
+        }
+        .glass-card.active { display: block; animation: zoomIn 0.5s forwards; }
 
-        .search-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; outline: none; font-family: inherit; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        .live-table-wrap { overflow-x: auto; margin-top: 10px; }
-        .live-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .live-table th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border); color: var(--text-sub); }
-        .live-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
+        /* Clock & Header */
+        .live-clock { font-size: 3rem; font-weight: 800; text-align: center; letter-spacing: -2px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .live-date { text-align: center; color: var(--accent-light); font-size: 0.9rem; font-weight: 600; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; }
 
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
-        .badge-in { background: #dcfce7; color: #166534; }
-        .badge-out { background: #fee2e2; color: #991b1b; }
-        .badge-leave { background: #fef3c7; color: #92400e; }
+        /* Inputs */
+        .pin-input {
+            width: 100%; background: rgba(0,0,0,0.2); border: 2px solid var(--glass-border); padding: 20px;
+            border-radius: 20px; color: #fff; font-size: 1.5rem; text-align: center; outline: none; margin-bottom: 20px;
+        }
+        .pin-input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
 
-        .btn { width: 100%; padding: 14px; border-radius: 15px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-excel { background: #1d6f42; color: white; margin-top: 15px; }
-        .logout-link { display: block; text-align: center; margin-top: 20px; color: var(--text-sub); font-size: 0.8rem; cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; }
+        /* Action Buttons */
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .action-node {
+            background: var(--surface); border: 1px solid var(--glass-border); border-radius: 28px;
+            padding: 25px 15px; display: flex; flex-direction: column; align-items: center; cursor: pointer;
+        }
+        .action-node:hover:not(:disabled) { background: rgba(255,255,255,0.1); transform: translateY(-5px); border-color: var(--accent); }
+        .action-node:active { transform: scale(0.95); }
+        .action-node:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+        .icon-circle { width: 50px; height: 50px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 12px; }
 
-        /* Login & Dashboard Styles (ย่อส่วนจากของเดิม) */
-        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 15px; text-align: center; font-size: 1.2rem; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .action-btn { background: #fff; border: 1px solid var(--border); padding: 20px; border-radius: 20px; cursor: pointer; font-weight: 700; }
-        .action-btn:disabled { opacity: 0.3; }
+        /* History & Status */
+        .status-badge { background: rgba(99, 102, 241, 0.1); color: var(--accent-light); padding: 8px 15px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; display: inline-block; margin-bottom: 20px; }
+        .history-item { 
+            display: flex; align-items: center; background: rgba(255,255,255,0.03); 
+            padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 4px solid var(--glass-border);
+        }
+        .history-item.in { border-left-color: var(--success); }
+        .history-item.out { border-left-color: var(--danger); }
+
+        /* Admin Layout */
+        .admin-stat { display: flex; gap: 10px; margin-bottom: 20px; }
+        .stat-box { flex: 1; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; text-align: center; border: 1px solid var(--glass-border); }
+        .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--accent-light); }
+        .search-admin { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 20px; border-radius: 15px; color: #fff; margin-bottom: 15px; }
+
+        .btn-pro { width: 100%; padding: 18px; border-radius: 20px; border: none; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .btn-indigo { background: var(--accent); color: #fff; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        .logout-btn { background: none; border: none; color: var(--text-secondary); width: 100%; margin-top: 20px; cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="page-login" class="page">
-        <h2 style="text-align:center">ProTime Cloud</h2>
-        <input type="password" id="login-pin" class="input-field" placeholder="กรอกรหัส PIN" maxlength="4">
-        <button class="btn" style="background:var(--primary); color:white" onclick="handleLogin()">Sign In</button>
+    <div id="page-login" class="glass-card active">
+        <div class="live-clock" id="login-clock">00:00</div>
+        <div class="live-date" id="login-date">...</div>
+        <h1 style="margin-bottom:10px">Secure Access</h1>
+        <p style="text-align:center; color:var(--text-secondary); margin-bottom:30px">ระบุ PIN ของคุณเพื่อเริ่มต้นวันใหม่</p>
+        <input type="password" id="login-pin" class="pin-input" placeholder="••••" maxlength="4" inputmode="numeric">
+        <button class="btn-pro btn-indigo" onclick="handleLogin()">Sign In</button>
     </div>
 
-    <div id="page-dashboard" class="page">
-        <h2 id="welcome-text">Dashboard</h2>
-        <div id="status-info" style="text-align:center; margin-bottom:20px; font-weight:600; color:var(--primary)">กำลังโหลด...</div>
-        <div class="action-grid">
-            <button id="btn-in" class="action-btn" onclick="record('เข้างาน')" style="color:var(--success)">Check In</button>
-            <button id="btn-out" class="action-btn" onclick="record('ออกงาน')" style="color:var(--danger)">Check Out</button>
+    <div id="page-dashboard" class="glass-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:25px">
+            <div>
+                <div id="greeting-text" style="color:var(--text-secondary); font-size:0.9rem">Good Morning</div>
+                <h2 id="welcome-text" style="margin:5px 0 0 0; font-size:1.6rem">User Name</h2>
+            </div>
+            <div id="status-tag" class="status-badge">ONLINE</div>
         </div>
-        <button class="btn" style="background:#f1f5f9" onclick="record('ลา')">แจ้งลาหยุด</button>
-        <button class="logout-link" onclick="logout()">Logout</button>
+
+        <div class="btn-grid">
+            <button id="btn-in" class="action-node" onclick="record('เข้างาน')">
+                <div class="icon-circle" style="background:rgba(16,185,129,0.1); color:var(--success)">🎯</div>
+                <span style="font-weight:700">Check In</span>
+            </button>
+            <button id="btn-out" class="action-node" onclick="record('ออกงาน')">
+                <div class="icon-circle" style="background:rgba(244,63,94,0.1); color:var(--danger)">🏁</div>
+                <span style="font-weight:700">Check Out</span>
+            </button>
+        </div>
+        <button class="btn-pro" style="background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--glass-border)" onclick="record('ลา')">🌴 แจ้งลาหยุด</button>
+
+        <div style="margin-top:30px">
+            <h3 style="font-size:1rem; margin-bottom:15px">Recent Logs</h3>
+            <div id="history-stack"></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout Account</button>
     </div>
 
-    <div id="page-admin" class="page">
-        <div class="admin-header">
-            <h2 style="margin:0">Admin Panel</h2>
-            <button onclick="logout()" style="border:none; background:none; color:var(--danger); font-weight:600; cursor:pointer">Exit</button>
+    <div id="page-admin" class="glass-card">
+        <h2 style="margin-top:0">Operations Hub</h2>
+        <div class="admin-stat">
+            <div class="stat-box"><div>Active</div><div id="stat-active" class="stat-val">0</div></div>
+            <div class="stat-box"><div>Leave</div><div id="stat-leave" class="stat-val">0</div></div>
         </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div>เข้างานแล้ว (วันนี้)</div>
-                <div id="stat-active">0</div>
-            </div>
-            <div class="stat-card">
-                <div>แจ้งลา (วันนี้)</div>
-                <div id="stat-leave">0</div>
-            </div>
-        </div>
-
-        <input type="text" id="admin-search" class="search-box" placeholder="ค้นหาชื่อพนักงาน..." onkeyup="filterTable()">
-
-        <div style="font-weight:700; font-size:0.9rem; margin-bottom:10px">Live Activity Monitor</div>
-        <div class="live-table-wrap">
-            <table class="live-table">
-                <thead>
-                    <tr>
-                        <th>พนักงาน</th>
-                        <th>กิจกรรม</th>
-                        <th>เวลา</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-live-body">
-                    </tbody>
-            </table>
-        </div>
-
-        <button class="btn btn-excel" onclick="exportFromFirestore()">📊 Export Excel Report</button>
+        <input type="text" id="admin-search" class="search-admin" placeholder="Search employee..." onkeyup="filterAdmin()">
+        <div id="admin-monitor" style="max-height:300px; overflow-y:auto; margin-bottom:20px"></div>
+        <button class="btn-pro btn-indigo" onclick="exportFromFirestore()">📊 Export Monthly Report</button>
+        <button class="logout-btn" onclick="logout()">Back to Portal</button>
     </div>
 </div>
 
@@ -117,94 +134,99 @@
         projectId: "we-la-tham-ngan",
         storageBucket: "we-la-tham-ngan.firebasestorage.app",
         messagingSenderId: "321115203647",
-        appId: "1:321115203647:web:9d8d11ed78c4e949e3b08a",
-        measurementId: "G-71P7D9NKJK"
+        appId: "1:321115203647:web:9d8d11ed78c4e949e3b08a"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const USERS = { "1234": "Jantra", "5678": "Panwasa", "9999": "Admin" };
     let currentUser = null;
-    let unsubscribeAdmin = null; // สำหรับยกเลิกการฟังข้อมูลแบบ Real-time
+    let adminListener = null;
 
-    window.onload = function() {
+    // ระบบนาฬิกา & ทักทาย
+    function updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+        
+        document.getElementById('login-clock').innerText = timeStr;
+        document.getElementById('login-date').innerText = dateStr;
+
+        const hour = now.getHours();
+        let greet = "Good Evening";
+        if(hour < 12) greet = "Good Morning";
+        else if(hour < 17) greet = "Good Afternoon";
+        if(document.getElementById('greeting-text')) document.getElementById('greeting-text').innerText = greet;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    window.onload = () => {
         const saved = localStorage.getItem('activeUser');
-        if (saved) { currentUser = saved; showPage(currentUser === 'Admin' ? 'page-admin' : 'page-dashboard'); initApp(); }
-        else { showPage('page-login'); }
+        if(saved) { currentUser = saved; entryPoint(); }
     };
 
     function handleLogin() {
         const pin = document.getElementById('login-pin').value;
-        if (USERS[pin]) {
+        if(USERS[pin]) {
             currentUser = USERS[pin];
             localStorage.setItem('activeUser', currentUser);
-            showPage(currentUser === 'Admin' ? 'page-admin' : 'page-dashboard');
-            initApp();
-        } else { alert('PIN ไม่ถูกต้อง'); }
+            entryPoint();
+        } else { alert("Invalid PIN"); }
     }
 
-    function initApp() {
-        if (currentUser === 'Admin') { startAdminMonitor(); } 
-        else { document.getElementById('welcome-text').innerText = "Hi, " + currentUser; refreshStaffStatus(); }
+    function entryPoint() {
+        if(currentUser === 'Admin') { showPage('page-admin'); initAdmin(); }
+        else { showPage('page-dashboard'); initStaff(); }
     }
 
-    // --- ส่วน Admin Real-time Logic ---
-    function startAdminMonitor() {
-        const today = new Date().toLocaleDateString('th-TH');
+    async function initStaff() {
+        document.getElementById('welcome-text').innerText = currentUser;
+        const snap = await db.collection("attendance_logs").where("name", "==", currentUser).orderBy("timestamp", "desc").limit(5).get();
         
-        // ฟังข้อมูลแบบ Real-time (onSnapshot)
-        unsubscribeAdmin = db.collection("attendance_logs")
-            .orderBy("timestamp", "desc")
-            .limit(20)
-            .onSnapshot((snapshot) => {
-                const body = document.getElementById('admin-live-body');
-                let html = '';
-                let activeToday = new Set();
-                let leaveToday = 0;
+        const historyStack = document.getElementById('history-stack');
+        let html = '';
+        if(!snap.empty) {
+            const lastType = snap.docs[0].data().type;
+            document.getElementById('status-tag').innerText = lastType === 'เข้างาน' ? 'WORKING' : 'OFF DUTY';
+            document.getElementById('btn-in').disabled = (lastType === 'เข้างาน');
+            document.getElementById('btn-out').disabled = (lastType !== 'เข้างาน');
 
-                snapshot.forEach(doc => {
-                    const d = doc.data();
-                    const badgeClass = d.type === 'เข้างาน' ? 'badge-in' : (d.type === 'ออกงาน' ? 'badge-out' : 'badge-leave');
-                    
-                    // สรุปยอดสถิติเฉพาะของวันนี้
-                    if(d.date === today) {
-                        if(d.type === 'เข้างาน') activeToday.add(d.name);
-                        if(d.type === 'ลา') leaveToday++;
-                    }
-
-                    html += `
-                        <tr class="log-row">
-                            <td style="font-weight:600">${d.name}</td>
-                            <td><span class="badge ${badgeClass}">${d.type}</span></td>
-                            <td style="color:var(--text-sub)">${d.time}</td>
-                        </tr>`;
-                });
-
-                body.innerHTML = html;
-                document.getElementById('stat-active').innerText = activeToday.size;
-                document.getElementById('stat-leave').innerText = leaveToday;
+            snap.forEach(doc => {
+                const d = doc.data();
+                const typeClass = d.type === 'เข้างาน' ? 'in' : 'out';
+                html += `<div class="history-item ${typeClass}">
+                    <div style="flex:1"><b>${d.type}</b><br><small style="color:var(--text-secondary)">${d.date}</small></div>
+                    <div style="font-weight:800">${d.time}</div>
+                </div>`;
             });
-    }
-
-    function filterTable() {
-        const input = document.getElementById('admin-search').value.toLowerCase();
-        const rows = document.getElementsByClassName('log-row');
-        Array.from(rows).forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
-        });
-    }
-
-    // --- ส่วน Staff Logic ---
-    async function refreshStaffStatus() {
-        const snap = await db.collection("attendance_logs").where("name", "==", currentUser).orderBy("timestamp", "desc").limit(1).get();
-        const statusBox = document.getElementById('status-info');
-        if (snap.empty) { statusBox.innerText = "สถานะ: พร้อมเข้างาน"; }
-        else {
-            const last = snap.docs[0].data().type;
-            statusBox.innerText = "สถานะล่าสุด: " + last;
-            document.getElementById('btn-in').disabled = (last === 'เข้างาน');
-            document.getElementById('btn-out').disabled = (last !== 'เข้างาน');
         }
+        historyStack.innerHTML = html || '<p style="text-align:center; color:var(--text-secondary)">No recent logs</p>';
+    }
+
+    function initAdmin() {
+        const today = new Date().toLocaleDateString('th-TH');
+        adminListener = db.collection("attendance_logs").orderBy("timestamp", "desc").limit(20).onSnapshot(snap => {
+            const mon = document.getElementById('admin-monitor');
+            let html = '';
+            let active = new Set();
+            let leave = 0;
+            
+            snap.forEach(doc => {
+                const d = doc.data();
+                if(d.date === today) {
+                    if(d.type === 'เข้างาน') active.add(d.name);
+                    if(d.type === 'ลา') leave++;
+                }
+                html += `<div class="history-item" style="border-left:none; background:rgba(255,255,255,0.02)">
+                    <div style="flex:1"><b>${d.name}</b><br><small>${d.type}</small></div>
+                    <div style="text-align:right"><b>${d.time}</b><br><small>${d.date}</small></div>
+                </div>`;
+            });
+            mon.innerHTML = html;
+            document.getElementById('stat-active').innerText = active.size;
+            document.getElementById('stat-leave').innerText = leave;
+        });
     }
 
     function record(type) {
@@ -214,27 +236,29 @@
             time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-        db.collection("attendance_logs").add(entry).then(() => { if(currentUser !== 'Admin') refreshStaffStatus(); });
+        db.collection("attendance_logs").add(entry).then(() => {
+            if(currentUser !== 'Admin') initStaff();
+        });
     }
 
     function logout() {
-        if(unsubscribeAdmin) unsubscribeAdmin(); // หยุดดึงข้อมูล Real-time
-        localStorage.removeItem('activeUser');
+        if(adminListener) adminListener();
+        localStorage.clear();
         location.reload();
     }
 
     function showPage(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.glass-card').forEach(c => c.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
     function exportFromFirestore() {
-        db.collection("attendance_logs").orderBy("timestamp", "desc").get().then((qs) => {
-            const logs = qs.docs.map(doc => doc.data());
-            const ws = XLSX.utils.json_to_sheet(logs);
+        db.collection("attendance_logs").orderBy("timestamp", "desc").get().then(qs => {
+            const data = qs.docs.map(d => d.data());
+            const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Report");
-            XLSX.writeFile(wb, "Staff_Report_Admin.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Logs");
+            XLSX.writeFile(wb, "UltraPro_Report.xlsx");
         });
     }
 </script>
