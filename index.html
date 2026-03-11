@@ -3,151 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกเวลา + ระบบหลังบ้าน</title>
+    <title>Time Tracking - Minimal Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4CAF50;
-            --danger: #f44336;
-            --dark: #2c3e50;
-            --light: #ecf0f1;
-            --bg: #f4f7f6;
-            --excel: #217346;
-            --active: #1976D2;
+            /* โทนสีสไตล์ Modern & Minimal */
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --primary: #3b82f6;      /* Blue */
+            --primary-hover: #2563eb;
+            --success: #10b981;      /* Emerald */
+            --success-hover: #059669;
+            --danger: #ef4444;       /* Red */
+            --danger-hover: #dc2626;
+            --excel: #059669;
+            --border-light: #e5e7eb;
         }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background-color: var(--bg);
-            color: #333;
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
         }
+
         .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 850px;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            transition: all 0.3s ease;
         }
-        h1, h2 { color: var(--dark); text-align: center; margin-top: 0; }
-        .clock { text-align: center; font-size: 1.8em; font-weight: bold; color: var(--primary); margin-bottom: 20px; }
+
+        h1, h2, h3 { color: var(--text-main); text-align: center; margin-top: 0; font-weight: 600; }
         
-        /* Employee Buttons Grid */
+        /* สไตล์นาฬิกาใหม่ */
+        .clock-container { text-align: center; margin-bottom: 30px; }
+        .clock-time { font-size: 3rem; font-weight: 600; color: var(--primary); letter-spacing: 2px; line-height: 1; }
+        .clock-date { font-size: 1rem; color: var(--text-muted); margin-top: 8px; font-weight: 300; }
+        
+        /* ปุ่มเลือกพนักงาน */
+        .section-title { text-align: center; margin-bottom: 15px; color: var(--text-muted); font-size: 0.95em; font-weight: 400; }
         .employee-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
             justify-content: center;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            margin-bottom: 30px;
         }
         .emp-btn {
-            background-color: #e0e0e0;
-            color: #333;
-            border: 2px solid transparent;
-            padding: 15px 25px;
-            font-size: 1.1em;
-            border-radius: 8px;
+            background-color: #f9fafb;
+            color: var(--text-main);
+            border: 1px solid var(--border-light);
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s;
-            font-weight: bold;
+            transition: all 0.2s ease;
+            font-family: 'Prompt', sans-serif;
+            font-weight: 400;
         }
-        .emp-btn:hover { background-color: #d5d5d5; }
-        /* สไตล์ตอนที่ปุ่มชื่อถูกเลือก */
+        .emp-btn:hover { background-color: #f3f4f6; border-color: #d1d5db; }
         .emp-btn.active {
-            background-color: var(--active);
+            background-color: var(--primary);
             color: white;
-            border-color: #0d47a1;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-color: var(--primary);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25);
+            transform: translateY(-2px);
+            font-weight: 500;
         }
 
-        /* Form Inputs */
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap; }
-        input { padding: 15px; font-size: 1.1em; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 150px; text-align: center;}
-        input[type="password"] { letter-spacing: 5px; font-weight: bold; max-width: 300px; }
+        /* ฟอร์มและ Input */
+        .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        input {
+            font-family: 'Prompt', sans-serif;
+            padding: 16px;
+            font-size: 1em;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            flex: 1;
+            min-width: 150px;
+            background-color: #f9fafb;
+            transition: all 0.2s;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        input[type="password"] {
+            text-align: center;
+            letter-spacing: 8px;
+            font-size: 1.4em;
+            font-weight: 600;
+            max-width: 250px;
+        }
         
-        /* Buttons */
-        .action-btn { padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; flex: 1; max-width: 200px;}
-        .action-btn:hover { opacity: 0.8; }
-        .btn-in { background-color: var(--primary); }
-        .btn-out { background-color: var(--danger); }
+        /* ปุ่มต่างๆ */
+        .action-btn {
+            padding: 16px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: 'Prompt', sans-serif;
+            flex: 1;
+            max-width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-in { background-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .btn-in:hover { background-color: var(--success-hover); transform: translateY(-2px); }
+        .btn-out { background-color: var(--danger); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
+        .btn-out:hover { background-color: var(--danger-hover); transform: translateY(-2px); }
         
-        .btn-admin { background-color: var(--dark); width: 100%; margin-top: 30px; padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 1em;}
-        .btn-logout { background-color: #7f8c8d; float: right; margin-bottom: 20px; padding: 10px; border: none; border-radius: 5px; color: white; cursor: pointer;}
-        .btn-add { background-color: #2980b9; padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer;}
-        .btn-excel { background-color: var(--excel); width: 100%; margin-top: 10px; padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 1.1em;}
+        .btn-text-link {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.9em;
+            text-decoration: underline;
+            padding: 10px;
+            width: 100%;
+            margin-top: 20px;
+            transition: color 0.2s;
+        }
+        .btn-text-link:hover { color: var(--text-main); }
+        
+        .btn-add { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-family: 'Prompt'; }
+        .btn-excel { background-color: var(--excel); color: white; width: 100%; margin-top: 10px; padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-size: 1em; font-family: 'Prompt'; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95em; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: var(--light); color: var(--dark); }
-        .status-in { background-color: #f39c12; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; }
-        .status-out { background-color: var(--primary); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; }
+        /* ตารางสไตล์มินิมอล */
+        .admin-section { border: 1px solid var(--border-light); padding: 25px; border-radius: 16px; margin-bottom: 24px; background: #fff; }
+        .filters { display: flex; gap: 10px; background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--border-light);}
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; font-size: 0.95em; }
+        th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid var(--border-light); }
+        th { color: var(--text-muted); font-weight: 500; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-light); }
+        tr:last-child td { border-bottom: none; }
+        
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
+        .status-in { background-color: #fef3c7; color: #d97706; }
+        .status-out { background-color: #d1fae5; color: #059669; }
 
-        /* Dashboard Layout */
-        .admin-section { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; background: #fafafa; }
         .hidden { display: none !important; }
-        .filters { display: flex; gap: 10px; background: var(--light); padding: 15px; border-radius: 5px; margin-bottom: 15px; flex-wrap: wrap;}
+        .divider { height: 1px; background-color: var(--border-light); margin: 30px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="view-employee">
-        <h1>ระบบบันทึกเวลาเข้า-ออกงาน</h1>
-        <div class="clock" id="realtime-clock">00:00:00</div>
+        <div class="clock-container">
+            <div class="clock-time" id="clock-time">00:00</div>
+            <div class="clock-date" id="clock-date">วันเดือนปี</div>
+        </div>
 
-        <h3 style="text-align: center; margin-bottom: 10px; color: #555;">👇 กรุณาเลือกชื่อของคุณ</h3>
+        <div class="divider"></div>
+
+        <div class="section-title">เลือกชื่อเพื่อบันทึกเวลา</div>
         <div id="employeeGrid" class="employee-grid">
             </div>
 
         <input type="hidden" id="empName" value="">
 
         <div class="input-group">
-            <input type="password" id="empPin" placeholder="รหัส PIN 4 หลัก" maxlength="4">
+            <input type="password" id="empPin" placeholder="PIN" maxlength="4">
         </div>
         <div class="input-group">
-            <button class="action-btn btn-in" onclick="handleClock('in')">📥 เข้างาน</button>
-            <button class="action-btn btn-out" onclick="handleClock('out')">📤 ออกงาน</button>
+            <button class="action-btn btn-in" onclick="handleClock('in')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                เข้างาน
+            </button>
+            <button class="action-btn btn-out" onclick="handleClock('out')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                ออกงาน
+            </button>
         </div>
 
-        <button class="btn-admin" onclick="loginAdmin()">⚙️ เข้าสู่ระบบจัดการหลังบ้าน (HR)</button>
+        <button class="btn-text-link" onclick="loginAdmin()">ผู้ดูแลระบบ (HR Dashboard) &rarr;</button>
     </div>
 
     <div id="view-admin" class="hidden">
-        <button class="btn-logout" onclick="logoutAdmin()">🚪 ออกจากระบบหลังบ้าน</button>
-        <h2>📊 แดชบอร์ดจัดการหลังบ้าน</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0;">HR Dashboard</h2>
+            <button class="btn-text-link" style="width: auto; margin: 0; padding: 0;" onclick="logoutAdmin()">&larr; กลับหน้าลงเวลา</button>
+        </div>
 
         <div class="admin-section">
-            <h3>👥 จัดการรหัสพนักงาน (ตั้งค่า PIN)</h3>
+            <h3>จัดการพนักงาน</h3>
             <div class="input-group">
-                <input type="text" id="newEmpName" placeholder="ชื่อพนักงานใหม่">
-                <input type="password" id="newEmpPin" placeholder="ตั้งรหัส PIN 4 หลัก" maxlength="4">
-                <button class="btn-add" onclick="addEmployee()">➕ เพิ่มพนักงาน</button>
+                <input type="text" id="newEmpName" placeholder="ชื่อพนักงาน">
+                <input type="password" id="newEmpPin" placeholder="PIN (4 หลัก)" maxlength="4" style="letter-spacing: normal; font-size: 1em;">
+                <button class="btn-add" onclick="addEmployee()">+ เพิ่มรายชื่อ</button>
             </div>
             <table>
-                <thead><tr><th>ชื่อพนักงาน</th><th>รหัส PIN</th><th>จัดการ</th></tr></thead>
+                <thead><tr><th>ชื่อพนักงาน</th><th>รหัส PIN</th><th>การจัดการ</th></tr></thead>
                 <tbody id="empTableBody"></tbody>
             </table>
         </div>
 
         <div class="admin-section">
-            <h3>ประวัติการลงเวลาทั้งหมด</h3>
+            <h3>ประวัติการลงเวลา</h3>
             <div class="filters">
-                <input type="text" id="searchName" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="renderRecords()">
+                <input type="text" id="searchName" placeholder="ค้นหาชื่อ..." oninput="renderRecords()">
                 <input type="date" id="filterDate" onchange="renderRecords()">
-                <button class="btn-out" style="padding: 10px; border:none; border-radius: 5px; color: white; cursor: pointer;" onclick="document.getElementById('searchName').value=''; document.getElementById('filterDate').value=''; renderRecords();">ล้างตัวกรอง</button>
+                <button class="btn-add" style="background:#6b7280;" onclick="document.getElementById('searchName').value=''; document.getElementById('filterDate').value=''; renderRecords();">รีเซ็ต</button>
             </div>
             
-            <button class="btn-excel" onclick="exportToCSV()">📥 ดาวน์โหลดข้อมูลเป็น Excel (CSV)</button>
+            <button class="btn-excel" onclick="exportToCSV()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                ดาวน์โหลด CSV
+            </button>
 
-            <table>
+            <table style="margin-top: 20px;">
                 <thead>
-                    <tr><th>วันที่</th><th>ชื่อพนักงาน</th><th>เวลาเข้า</th><th>เวลาออก</th><th>สถานะ</th></tr>
+                    <tr><th>วันที่</th><th>พนักงาน</th><th>เข้า</th><th>ออก</th><th>สถานะ</th></tr>
                 </thead>
                 <tbody id="recordTableBody"></tbody>
             </table>
@@ -166,53 +252,49 @@
         localStorage.setItem('employees_v2', JSON.stringify(employees));
     }
 
-    // --- ระบบเวลา Real-time ---
-    setInterval(() => {
-        document.getElementById('realtime-clock').innerText = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'medium' });
-    }, 1000);
+    // --- ระบบเวลา (แยกวันที่และเวลา) ---
+    function updateClock() {
+        const now = new Date();
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        
+        document.getElementById('clock-time').innerText = now.toLocaleTimeString('th-TH', timeOptions);
+        document.getElementById('clock-date').innerText = now.toLocaleDateString('th-TH', dateOptions);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
 
     // ================= สร้างปุ่มรายชื่อพนักงาน =================
     function renderEmployeeButtons() {
         const grid = document.getElementById('employeeGrid');
-        
         if (employees.length === 0) {
-            grid.innerHTML = '<span style="color:red;">ยังไม่มีรายชื่อพนักงาน กรุณาเข้าสู่ระบบหลังบ้านเพื่อเพิ่มพนักงาน</span>';
+            grid.innerHTML = '<span style="color:#ef4444; font-size: 0.9em;">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มในระบบผู้ดูแล</span>';
             return;
         }
-
         grid.innerHTML = employees.map(emp => 
             `<button class="emp-btn" id="btn-emp-${emp.name}" onclick="selectEmployee('${emp.name}')">${emp.name}</button>`
         ).join('');
     }
 
-    // ฟังก์ชันเมื่อกดเลือกชื่อ
     function selectEmployee(name) {
-        // บันทึกชื่อลง input ที่ซ่อนไว้
         document.getElementById('empName').value = name;
-        
-        // ล้างสีปุ่มทั้งหมดก่อน
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
-        
-        // ใส่สีให้ปุ่มที่ถูกคลิก
         document.getElementById(`btn-emp-${name}`).classList.add('active');
-        
-        // โฟกัสไปที่ช่องใส่ PIN อัตโนมัติ
         document.getElementById('empPin').focus();
     }
 
-    // โหลดปุ่มชื่อตอนเปิดเว็บครั้งแรก
     renderEmployeeButtons();
 
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
-        const name = document.getElementById('empName').value; // ดึงชื่อจากปุ่มที่กด
+        const name = document.getElementById('empName').value;
         const pin = document.getElementById('empPin').value.trim();
 
-        if (!name) return alert('กรุณากดเลือกชื่อของคุณก่อนครับ');
+        if (!name) return alert('กรุณาเลือกชื่อของคุณก่อนครับ');
         if (!pin) return alert('กรุณาใส่รหัส PIN 4 หลักครับ');
 
         const validEmp = employees.find(e => e.name === name && e.pin === pin);
-        if (!validEmp) return alert('❌ รหัส PIN ไม่ถูกต้อง!');
+        if (!validEmp) return alert('รหัส PIN ไม่ถูกต้อง!');
 
         const activeRecordIndex = records.findIndex(r => r.name === name && !r.timeOut);
         const now = new Date().toISOString();
@@ -220,31 +302,29 @@
         if (type === 'in') {
             if (activeRecordIndex > -1) return alert('คุณได้บันทึกเข้างานไปแล้วครับ');
             records.push({ id: Date.now(), name: name, timeIn: now, timeOut: null });
-            alert(`✅ บันทึกเวลาเข้างานของคุณ ${name} สำเร็จ!`);
+            alert(`เข้างานสำเร็จ: ${name}`);
         } else if (type === 'out') {
-            if (activeRecordIndex === -1) return alert('ไม่พบประวัติการเข้างานของคุณครับ');
+            if (activeRecordIndex === -1) return alert('ยังไม่ได้บันทึกเข้างานครับ');
             records[activeRecordIndex].timeOut = now;
-            alert(`✅ บันทึกเวลาออกงานของคุณ ${name} สำเร็จ!`);
+            alert(`ออกงานสำเร็จ: ${name}`);
         }
 
         saveData();
-        
-        // เคลียร์ค่าหน้าจอหลังจากบันทึกเสร็จ
         document.getElementById('empName').value = ''; 
         document.getElementById('empPin').value = '';  
-        document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active')); // เอาสีปุ่มออก
+        document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
     }
 
     // ================= ส่วนของ Admin =================
     function loginAdmin() {
-        const pass = prompt('กรุณาใส่รหัสผ่านผู้ดูแลระบบ (ค่าเริ่มต้นคือ: admin)');
+        const pass = prompt('รหัสผ่านผู้ดูแลระบบ:');
         if (pass === ADMIN_PASSWORD) {
             document.getElementById('view-employee').classList.add('hidden');
             document.getElementById('view-admin').classList.remove('hidden');
             renderEmployees();
             renderRecords();
         } else if (pass !== null) {
-            alert('❌ รหัสผ่านไม่ถูกต้อง');
+            alert('รหัสผ่านไม่ถูกต้อง');
         }
     }
 
@@ -257,23 +337,23 @@
         const name = document.getElementById('newEmpName').value.trim();
         const pin = document.getElementById('newEmpPin').value.trim();
         
-        if (!name || pin.length !== 4) return alert('กรุณากรอกชื่อ และตั้งรหัส PIN ให้ครบ 4 หลักครับ');
-        if (employees.find(e => e.name === name)) return alert('มีชื่อพนักงานคนนี้ในระบบแล้ว');
+        if (!name || pin.length !== 4) return alert('กรุณากรอกชื่อ และ PIN 4 หลัก');
+        if (employees.find(e => e.name === name)) return alert('มีชื่อนี้ในระบบแล้ว');
 
         employees.push({ name, pin });
         saveData();
         renderEmployees();
-        renderEmployeeButtons(); // อัปเดตปุ่มชื่อหน้าแรก
+        renderEmployeeButtons();
         document.getElementById('newEmpName').value = '';
         document.getElementById('newEmpPin').value = '';
     }
 
     function deleteEmployee(name) {
-        if (confirm(`ลบข้อมูลคุณ ${name} ออกจากระบบ?`)) {
+        if (confirm(`ลบข้อมูล ${name} หรือไม่?`)) {
             employees = employees.filter(e => e.name !== name);
             saveData();
             renderEmployees();
-            renderEmployeeButtons(); // อัปเดตปุ่มชื่อหน้าแรก
+            renderEmployeeButtons();
         }
     }
 
@@ -282,8 +362,8 @@
         tbody.innerHTML = employees.map(emp => `
             <tr>
                 <td>${emp.name}</td>
-                <td>***${emp.pin.slice(-1)} (ซ่อน)</td>
-                <td><button class="btn-out" style="padding:5px 10px; border:none; border-radius:5px; color:white; cursor:pointer;" onclick="deleteEmployee('${emp.name}')">ลบ</button></td>
+                <td style="color:var(--text-muted); font-family:monospace;">***${emp.pin.slice(-1)}</td>
+                <td><button class="btn-text-link" style="color:var(--danger); padding:0; text-align:left; width:auto; text-decoration:none;" onclick="deleteEmployee('${emp.name}')">ลบ</button></td>
             </tr>
         `).join('');
     }
@@ -301,22 +381,20 @@
         }).reverse();
 
         tbody.innerHTML = filteredRecords.map(record => {
-            const dateStr = new Date(record.timeIn).toLocaleDateString('th-TH');
-            const timeInStr = new Date(record.timeIn).toLocaleTimeString('th-TH');
-            const timeOutStr = record.timeOut ? new Date(record.timeOut).toLocaleTimeString('th-TH') : '-';
+            const dateStr = new Date(record.timeIn).toLocaleDateString('th-TH', { month:'short', day:'numeric' });
+            const timeInStr = new Date(record.timeIn).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+            const timeOutStr = record.timeOut ? new Date(record.timeOut).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) : '-';
             const status = record.timeOut 
-                ? '<span class="status-out">ออกแล้ว</span>' 
-                : '<span class="status-in">กำลังทำงาน</span>';
+                ? '<span class="status-badge status-out">ออกแล้ว</span>' 
+                : '<span class="status-badge status-in">กำลังทำงาน</span>';
 
             return `<tr><td>${dateStr}</td><td><strong>${record.name}</strong></td><td>${timeInStr}</td><td>${timeOutStr}</td><td>${status}</td></tr>`;
         }).join('');
     }
 
-    // ================= ระบบดาวน์โหลดไฟล์ Excel (CSV) =================
+    // ================= ดาวน์โหลด CSV =================
     function exportToCSV() {
-        if (records.length === 0) {
-            return alert('ยังไม่มีข้อมูลประวัติการทำงานในระบบครับ');
-        }
+        if (records.length === 0) return alert('ไม่มีข้อมูลประวัติการทำงาน');
 
         let csvContent = "\uFEFF"; 
         csvContent += "วันที่,ชื่อพนักงาน,เวลาเข้า,เวลาออก,ชั่วโมงทำงาน,สถานะ\n";
@@ -344,10 +422,9 @@
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
-        
         const today = new Date().toISOString().split('T')[0];
         link.setAttribute("href", url);
-        link.setAttribute("download", `ประวัติลงเวลา_${today}.csv`);
+        link.setAttribute("download", `Timesheet_${today}.csv`);
         
         document.body.appendChild(link);
         link.click();
