@@ -33,7 +33,8 @@
         
         /* Form Inputs */
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap; }
-        input { padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 150px; }
+        /* เพิ่ม select เข้าไปใน style เดียวกับ input */
+        input, select { padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 150px; font-family: inherit;}
         input[type="password"] { text-align: center; letter-spacing: 2px; }
         
         /* Buttons */
@@ -67,7 +68,9 @@
         <div class="clock" id="realtime-clock">00:00:00</div>
 
         <div class="input-group">
-            <input type="text" id="empName" placeholder="ชื่อพนักงาน (เช่น สมชาย)">
+            <select id="empName">
+                <option value="">-- กรุณาเลือกชื่อของคุณ --</option>
+            </select>
             <input type="password" id="empPin" placeholder="รหัส PIN 4 หลัก" maxlength="4">
         </div>
         <div class="input-group">
@@ -131,15 +134,30 @@
         document.getElementById('realtime-clock').innerText = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'medium' });
     }, 1000);
 
+    // ================= โหลดรายชื่อพนักงานใส่ Dropdown =================
+    function populateEmployeeDropdown() {
+        const select = document.getElementById('empName');
+        // รีเซ็ตเป็นค่าเริ่มต้นก่อน
+        select.innerHTML = '<option value="">-- กรุณาเลือกชื่อของคุณ --</option>';
+        // วนลูปรายชื่อพนักงานมาใส่ใน Dropdown
+        employees.forEach(emp => {
+            select.innerHTML += `<option value="${emp.name}">${emp.name}</option>`;
+        });
+    }
+
+    // เรียกใช้งานตอนเปิดหน้าเว็บครั้งแรก
+    populateEmployeeDropdown();
+
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
-        const name = document.getElementById('empName').value.trim();
+        const name = document.getElementById('empName').value; // ดึงค่าจาก Dropdown
         const pin = document.getElementById('empPin').value.trim();
 
-        if (!name || !pin) return alert('กรุณากรอกชื่อและรหัส PIN ให้ครบถ้วนครับ');
+        if (!name) return alert('กรุณาเลือกชื่อพนักงานก่อนครับ');
+        if (!pin) return alert('กรุณาใส่รหัส PIN 4 หลักครับ');
 
         const validEmp = employees.find(e => e.name === name && e.pin === pin);
-        if (!validEmp) return alert('❌ ชื่อหรือรหัส PIN ไม่ถูกต้อง! (หากยังไม่มีชื่อ ให้ติดต่อ HR)');
+        if (!validEmp) return alert('❌ รหัส PIN ไม่ถูกต้อง!');
 
         const activeRecordIndex = records.findIndex(r => r.name === name && !r.timeOut);
         const now = new Date().toISOString();
@@ -147,16 +165,16 @@
         if (type === 'in') {
             if (activeRecordIndex > -1) return alert('คุณได้บันทึกเข้างานไปแล้วครับ');
             records.push({ id: Date.now(), name: name, timeIn: now, timeOut: null });
-            alert('✅ บันทึกเวลาเข้างานสำเร็จ!');
+            alert(`✅ บันทึกเวลาเข้างานของคุณ ${name} สำเร็จ!`);
         } else if (type === 'out') {
             if (activeRecordIndex === -1) return alert('ไม่พบประวัติการเข้างานของคุณครับ');
             records[activeRecordIndex].timeOut = now;
-            alert('✅ บันทึกเวลาออกงานสำเร็จ!');
+            alert(`✅ บันทึกเวลาออกงานของคุณ ${name} สำเร็จ!`);
         }
 
         saveData();
-        document.getElementById('empName').value = '';
-        document.getElementById('empPin').value = '';
+        document.getElementById('empName').value = ''; // รีเซ็ต Dropdown
+        document.getElementById('empPin').value = '';  // เคลียร์รหัส PIN
     }
 
     // ================= ส่วนของ Admin =================
@@ -187,6 +205,7 @@
         employees.push({ name, pin });
         saveData();
         renderEmployees();
+        populateEmployeeDropdown(); // อัปเดต Dropdown หน้าแรกด้วย
         document.getElementById('newEmpName').value = '';
         document.getElementById('newEmpPin').value = '';
     }
@@ -196,6 +215,7 @@
             employees = employees.filter(e => e.name !== name);
             saveData();
             renderEmployees();
+            populateEmployeeDropdown(); // อัปเดต Dropdown หน้าแรกด้วย
         }
     }
 
@@ -240,13 +260,9 @@
             return alert('ยังไม่มีข้อมูลประวัติการทำงานในระบบครับ');
         }
 
-        // \uFEFF คือ BOM เพื่อให้ Excel อ่านภาษาไทยเป็น UTF-8 ได้ถูกต้อง
         let csvContent = "\uFEFF"; 
-        
-        // สร้างหัวตาราง (Header)
         csvContent += "วันที่,ชื่อพนักงาน,เวลาเข้า,เวลาออก,ชั่วโมงทำงาน,สถานะ\n";
 
-        // วนลูปข้อมูลทั้งหมดเพื่อใส่ในแต่ละแถว
         records.forEach(record => {
             const dateStr = new Date(record.timeIn).toLocaleDateString('th-TH');
             const name = record.name;
@@ -256,7 +272,6 @@
             let durationStr = '-';
             let status = 'กำลังทำงาน';
             
-            // คำนวณชั่วโมงทำงานถ้าพนักงานกดออกงานแล้ว
             if (record.timeOut) {
                 const diff = new Date(record.timeOut) - new Date(record.timeIn);
                 const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -265,16 +280,13 @@
                 status = 'เสร็จสิ้น';
             }
 
-            // นำข้อมูลมาต่อกันโดยมีลูกน้ำ (,) คั่น
             csvContent += `"${dateStr}","${name}","${timeInStr}","${timeOutStr}","${durationStr}","${status}"\n`;
         });
 
-        // สร้างไฟล์และสั่งดาวน์โหลด
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         
-        // ตั้งชื่อไฟล์พร้อมวันที่ปัจจุบัน
         const today = new Date().toISOString().split('T')[0];
         link.setAttribute("href", url);
         link.setAttribute("download", `ประวัติลงเวลา_${today}.csv`);
