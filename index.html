@@ -2,8 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking - Ultra Minimal Kiosk</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Time Tracking - Locked Kiosk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -32,6 +32,11 @@
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
+            
+            /* 2. ป้องกันการเคาะหน้าจอ 2 ครั้งเพื่อซูม (CSS) */
+            touch-action: pan-x pan-y;
+            -webkit-text-size-adjust: 100%;
+            overflow-x: hidden;
         }
 
         .container {
@@ -65,6 +70,9 @@
             transition: all 0.2s ease;
             font-family: 'Prompt', sans-serif;
             font-weight: 400;
+            /* ป้องกันการคลุมดำข้อความบนปุ่ม */
+            user-select: none;
+            -webkit-user-select: none;
         }
         .emp-btn:hover { background-color: #f3f4f6; border-color: #d1d5db; }
         .emp-btn.active {
@@ -77,28 +85,12 @@
         }
 
         /* Step 2 Container (Animation) */
-        #step2-container {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-        #step2-container.hidden-step {
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            display: none;
-        }
+        #step2-container { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
+        #step2-container.hidden-step { opacity: 0; transform: translateY(20px); pointer-events: none; display: none; }
 
         /* PIN Dots Indicator */
         .pin-display { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; transition: opacity 0.3s; }
-        .pin-dot {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid #cbd5e1;
-            background-color: transparent;
-            transition: all 0.2s ease;
-        }
+        .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #cbd5e1; background-color: transparent; transition: all 0.2s ease; }
         .pin-dot.filled { background-color: var(--primary); border-color: var(--primary); transform: scale(1.1); }
 
         /* Numpad */
@@ -107,28 +99,20 @@
             background-color: #f9fafb; border: 1px solid var(--border-light); border-radius: 16px; padding: 18px 0;
             font-size: 1.5em; font-weight: 500; font-family: 'Prompt', sans-serif; color: var(--text-main);
             cursor: pointer; transition: all 0.1s ease; display: flex; align-items: center; justify-content: center;
+            user-select: none; -webkit-user-select: none;
         }
         .num-btn:active { background-color: var(--border-light); transform: scale(0.95); }
         .num-btn-del { color: var(--danger); background-color: #fee2e2; border-color: #fca5a5; }
 
         /* Action Buttons (ถูกซ่อนไว้ตอนแรก) */
         .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
-        #action-buttons {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-        #action-buttons.hidden {
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            display: none !important;
-        }
+        #action-buttons { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
+        #action-buttons.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; display: none !important; }
         
         .action-btn {
             padding: 18px 30px; font-size: 1.1em; border: none; border-radius: 16px; cursor: pointer; color: white;
             font-weight: 500; transition: all 0.2s; font-family: 'Prompt', sans-serif; flex: 1; max-width: 200px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; user-select: none; -webkit-user-select: none;
         }
         .btn-in { background-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
         .btn-in:hover { background-color: var(--success-hover); transform: translateY(-2px); }
@@ -260,6 +244,29 @@
 </div>
 
 <script>
+    // --- 3. JavaScript ป้องกันการซูมด้วยนิ้ว (Pinch-to-zoom) และเมาส์ (Ctrl+Scroll) ---
+    document.addEventListener('touchstart', function(event) {
+        if (event.touches.length > 1) {
+            event.preventDefault(); // กันการใช้นิ้วถ่างจอ
+        }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        let now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault(); // กันการเคาะเบิ้ล 2 ครั้ง (Double tap) สำหรับ iOS
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    document.addEventListener('wheel', function(event) {
+        if (event.ctrlKey) {
+            event.preventDefault(); // กันการกด Ctrl + กลิ้งเมาส์ซูมบน PC
+        }
+    }, { passive: false });
+    // -------------------------------------------------------------------------
+
     const ADMIN_PASSWORD = "admin"; 
     
     let records = JSON.parse(localStorage.getItem('timeRecords_v2')) || [];
@@ -300,7 +307,6 @@
     function selectEmployee(name) {
         document.getElementById('empName').value = name;
         
-        // รีเซ็ตการซ่อน/แสดง กลับไปเป็นโหมดพร้อมใส่รหัส
         document.getElementById('selected-emp-text').classList.remove('hidden');
         document.getElementById('pin-display').classList.remove('hidden');
         document.getElementById('numpad').classList.remove('hidden');
@@ -336,7 +342,6 @@
         currentPinCode += num;
         updatePinDots();
 
-        // เมื่อพิมพ์ครบ 4 ตัว ให้ตรวจรหัส
         if (currentPinCode.length === 4) {
             verifyPin();
         }
@@ -358,20 +363,16 @@
         const name = document.getElementById('empName').value;
         const validEmp = employees.find(e => e.name === name && e.pin === currentPinCode);
 
-        // หน่วงเวลาเล็กน้อยเพื่อให้เห็นจุดไข่ปลาที่ 4 ปรากฏก่อนที่จะเปลี่ยนหน้าจอ
         setTimeout(() => {
             if (validEmp) {
                 isPinVerified = true;
                 
-                // ถ้ารหัสถูก ให้ซ่อนกล่องข้อความ จุดไข่ปลา และแป้นพิมพ์ทิ้งไปเลย
                 document.getElementById('selected-emp-text').classList.add('hidden');
                 document.getElementById('pin-display').classList.add('hidden');
                 document.getElementById('numpad').classList.add('hidden');
                 
-                // โชว์ปุ่ม เข้า/ออก งาน ขึ้นมาแทน
                 document.getElementById('action-buttons').classList.remove('hidden');
             } else {
-                // กรณีรหัสผิด
                 alert('❌ รหัส PIN ไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง');
                 clearNum();
             }
@@ -382,7 +383,6 @@
         document.getElementById('step2-container').classList.add('hidden-step');
         document.getElementById('empName').value = ''; 
         
-        // คืนค่า Element ที่ถูกซ่อนไว้ให้กลับมาแสดง (เผื่อไว้ให้คนต่อไปใช้)
         document.getElementById('selected-emp-text').classList.remove('hidden');
         document.getElementById('pin-display').classList.remove('hidden');
         document.getElementById('numpad').classList.remove('hidden');
