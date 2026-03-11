@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Time Tracking</title>
+    <title>Enterprise Secure Time Tracking</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -24,8 +24,7 @@
 
         .container { width: 100%; max-width: 400px; padding: 20px; }
 
-        /* การจัดการหน้าจอ (Hidden by default) */
-        .page { display: none; background: var(--card); padding: 32px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .page { display: none; background: var(--card); padding: 32px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
         .page.active { display: block; animation: fadeIn 0.3s ease; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -34,32 +33,27 @@
         .subtitle { color: var(--text-sub); font-size: 0.85rem; text-align: center; margin-bottom: 24px; }
 
         .input-field {
-            width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 1rem; text-align: center; background: #fdfdfd;
+            width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border);
+            border-radius: 12px; font-size: 1.1rem; text-align: center; background: #fdfdfd; outline: none;
         }
+        .input-field:focus { border-color: var(--primary); }
 
         .btn {
-            width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600;
-            cursor: pointer; font-size: 0.9rem; transition: 0.2s;
+            width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600;
+            cursor: pointer; font-size: 0.95rem; transition: 0.2s;
         }
         .btn-main { background: var(--primary); color: white; }
         .btn-main:hover { opacity: 0.9; }
         .btn-ghost { background: transparent; color: var(--text-sub); margin-top: 12px; }
 
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
         .action-btn { 
-            background: white; border: 1px solid var(--border); padding: 15px 10px; 
-            border-radius: 12px; font-size: 0.8rem; font-weight: 600;
+            background: white; border: 1px solid var(--border); padding: 18px 10px; 
+            border-radius: 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
         }
         .action-btn:hover { background: #f8fafc; border-color: var(--primary); }
 
-        .status-badge {
-            display: inline-block; padding: 4px 12px; border-radius: 20px; 
-            font-size: 0.75rem; font-weight: 600; margin-bottom: 16px;
-        }
-
-        .footer-links { text-align: center; margin-top: 24px; }
-        .link { font-size: 0.75rem; color: var(--text-sub); cursor: pointer; text-decoration: underline; background: none; border: none; }
+        .admin-box { margin-top: 30px; padding: 15px; background: #f1f5f9; border-radius: 12px; text-align: center; }
     </style>
 </head>
 <body>
@@ -67,20 +61,15 @@
 <div class="container">
     
     <div id="page-login" class="page active">
-        <h1>Welcome Back</h1>
-        <p class="subtitle">กรุณาระบุรหัสผ่านเพื่อเข้าใช้งาน</p>
+        <h1>Secure Login</h1>
+        <p class="subtitle">ระบุ PIN เพื่อเข้าใช้งานระบบ</p>
         <input type="password" id="login-pin" class="input-field" placeholder="Enter 4-digit PIN" maxlength="4">
-        <button class="btn btn-main" onclick="handleLogin()">Login</button>
-        <div class="footer-links" style="margin-top: 40px;">
-            <button class="link" onclick="exportToExcel()">Export Admin Report</button>
-        </div>
+        <button class="btn btn-main" onclick="handleLogin()">Sign In</button>
     </div>
 
     <div id="page-dashboard" class="page">
-        <div id="user-header">
-            <h1 id="welcome-text">User Dashboard</h1>
-            <p class="subtitle" id="date-text"></p>
-        </div>
+        <h1 id="welcome-text">Dashboard</h1>
+        <p class="subtitle" id="date-text"></p>
 
         <div class="action-grid">
             <button class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In</button>
@@ -89,31 +78,52 @@
             <button class="action-btn" onclick="record('ลา')" style="color: #f59e0b">Leave</button>
         </div>
 
-        <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+    </div>
+
+    <div id="page-admin" class="page">
+        <h1>Admin Control</h1>
+        <p class="subtitle">ระบบจัดการและออกรายงานข้อมูล</p>
+        
+        <div class="admin-box">
+            <p style="font-size: 0.9rem; font-weight: 600; margin-bottom: 15px;">สรุปข้อมูลพนักงาน</p>
+            <button class="btn btn-main" style="background: var(--success);" onclick="exportToExcel()">📊 Download Excel Report</button>
+        </div>
+
+        <button class="btn btn-ghost" style="color: var(--error);" onclick="clearData()">Clear All Data</button>
+        <button class="btn btn-ghost" onclick="logout()">Back to Login</button>
     </div>
 
 </div>
 
 <script>
-    const users = {
-        "1234": "Jantra",
-        "5678": "Panwasa"
+    const USERS = {
+        "1234": { name: "Jantra", role: "staff" },
+        "5678": { name: "Panwasa", role: "staff" },
+        "9999": { name: "Administrator", role: "admin" }
     };
 
     let currentUser = null;
 
     function handleLogin() {
         const pin = document.getElementById('login-pin').value;
-        if (users[pin]) {
-            currentUser = users[pin];
-            showPage('page-dashboard');
-            document.getElementById('welcome-text').innerText = `Hello, ${currentUser}`;
-            document.getElementById('date-text').innerText = new Date().toLocaleDateString('th-TH', { 
-                day: 'numeric', month: 'long', year: 'numeric' 
-            });
+        const user = USERS[pin];
+
+        if (user) {
+            currentUser = user.name;
             document.getElementById('login-pin').value = '';
+            
+            if (user.role === 'admin') {
+                showPage('page-admin');
+            } else {
+                showPage('page-dashboard');
+                document.getElementById('welcome-text').innerText = `Hello, ${currentUser}`;
+                document.getElementById('date-text').innerText = new Date().toLocaleDateString('th-TH', { 
+                    day: 'numeric', month: 'long', year: 'numeric' 
+                });
+            }
         } else {
-            alert('รหัสผ่านไม่ถูกต้อง');
+            alert('PIN ไม่ถูกต้อง');
             document.getElementById('login-pin').value = '';
         }
     }
@@ -125,24 +135,24 @@
 
     function record(type) {
         let note = "-";
-        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุเหตุผล";
-        if (type === 'โอที') note = confirm("กด OK เพื่อเริ่มโอที / Cancel เพื่อจบโอที") ? "เริ่มโอที" : "จบโอที";
+        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
+        if (type === 'โอที') note = confirm("กดตกลงเพื่อ เริ่มโอที / ยกเลิกเพื่อ จบโอที") ? "เริ่มโอที" : "จบโอที";
 
         const now = new Date();
         const entry = {
-            Name: currentUser,
-            Type: type,
-            Date: now.toLocaleDateString('th-TH'),
-            Time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-            Note: note
+            "ชื่อพนักงาน": currentUser,
+            "กิจกรรม": type,
+            "วันที่": now.toLocaleDateString('th-TH'),
+            "เวลา": now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+            "หมายเหตุ": note
         };
 
-        const logs = JSON.parse(localStorage.getItem('secureStaffLogs')) || [];
+        const logs = JSON.parse(localStorage.getItem('adminLogs')) || [];
         logs.unshift(entry);
-        localStorage.setItem('secureStaffLogs', JSON.stringify(logs));
+        localStorage.setItem('adminLogs', JSON.stringify(logs));
         
-        alert(`บันทึก ${type} สำเร็จ`);
-        logout(); // บันทึกเสร็จแล้วล็อกเอาท์อัตโนมัติเพื่อความปลอดภัย
+        alert(`บันทึกสำเร็จ`);
+        logout();
     }
 
     function logout() {
@@ -151,16 +161,20 @@
     }
 
     function exportToExcel() {
-        const adminPin = prompt("Enter Admin PIN to Export (1234):");
-        if(adminPin !== "1234") return alert("Unauthorized");
-
-        const logs = JSON.parse(localStorage.getItem('secureStaffLogs')) || [];
-        if (!logs.length) return alert('ไม่มีข้อมูล');
+        const logs = JSON.parse(localStorage.getItem('adminLogs')) || [];
+        if (!logs.length) return alert('ไม่มีข้อมูลในระบบ');
         
         const ws = XLSX.utils.json_to_sheet(logs);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "StaffLogs");
-        XLSX.writeFile(wb, "Staff_Attendance_Report.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "AttendanceData");
+        XLSX.writeFile(wb, "Staff_Report_Secure.xlsx");
+    }
+
+    function clearData() {
+        if (confirm('คุณต้องการลบข้อมูลประวัติทั้งหมดใช่หรือไม่? (การกระทำนี้ย้อนคืนไม่ได้)')) {
+            localStorage.removeItem('adminLogs');
+            alert('ล้างข้อมูลสำเร็จ');
+        }
     }
 </script>
 
