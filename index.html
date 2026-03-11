@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Log - Strict Mode</title>
+    <title>Work Log - Status Fixed</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -19,15 +19,11 @@
         .input-field { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 12px; text-align: center; font-size: 1.1rem; box-sizing: border-box; }
         .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-main { background: var(--primary); color: white; }
-        
         .action-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; }
         .action-btn { background: white; border: 2px solid var(--border); padding: 18px 10px; border-radius: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* สไตล์เมื่อปุ่มถูกปิดใช้งาน */
-        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; border-style: dashed; }
+        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; border-style: dashed; color: #94a3b8 !important; }
         .action-btn:not(:disabled):hover { border-color: var(--primary); background: #f8fafc; }
-        
-        .current-status-box { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 20px; color: var(--primary); }
+        .current-status-box { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 20px; color: var(--primary); min-height: 1.2em; }
         .logout-link { display: block; text-align: center; margin-top: 20px; color: #64748b; font-size: 0.8rem; cursor: pointer; background: none; border: none; width: 100%; text-decoration: underline; }
     </style>
 </head>
@@ -36,14 +32,14 @@
 <div class="container">
     <div id="page-login" class="page active">
         <h1>Cloud Login</h1>
-        <p class="subtitle">ระบุ PIN เพื่อเข้างาน</p>
+        <p class="subtitle">ระบุ PIN ของคุณ</p>
         <input type="password" id="login-pin" class="input-field" placeholder="PIN" maxlength="4">
         <button class="btn btn-main" onclick="handleLogin()">Sign In</button>
     </div>
 
     <div id="page-dashboard" class="page">
         <h1 id="welcome-text">Dashboard</h1>
-        <div id="status-info" class="current-status-box">กำลังตรวจสอบสถานะล่าสุด...</div>
+        <div id="status-info" class="current-status-box">กำลังตรวจสอบสถานะ...</div>
         
         <div class="action-grid">
             <button id="btn-in" class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">
@@ -56,7 +52,7 @@
                 <span>แจ้งลา (Leave)</span> <span>➜</span>
             </button>
         </div>
-        <button class="logout-link" onclick="logout()">Logout</button>
+        <button class="logout-link" onclick="logout()">Logout / ยกเลิก</button>
     </div>
 
     <div id="page-admin" class="page">
@@ -79,10 +75,9 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
     const USERS = { "1234": "Jantra", "5678": "Panwasa", "9999": "Admin" };
+    
     let currentUser = null;
-    let lastStatus = null;
 
     async function handleLogin() {
         const pin = document.getElementById('login-pin').value;
@@ -93,16 +88,25 @@
             if (currentUser === 'Admin') {
                 showPage('page-admin');
             } else {
+                // เคลียร์ UI ก่อนแสดงผลคนใหม่
+                resetDashboardUI();
                 showPage('page-dashboard');
                 document.getElementById('welcome-text').innerText = "สวัสดี, " + currentUser;
-                await checkLastStatus(); // ตรวจสอบสถานะก่อนให้กดปุ่ม
+                await checkLastStatus(); 
             }
         } else {
             alert('PIN ไม่ถูกต้อง');
+            document.getElementById('login-pin').value = '';
         }
     }
 
-    // ฟังก์ชันตรวจสอบสถานะล่าสุดจาก Firestore
+    // ฟังก์ชันล้างสถานะปุ่มและข้อความก่อนเช็คคนใหม่
+    function resetDashboardUI() {
+        document.getElementById('status-info').innerText = "กำลังตรวจสอบสถานะ...";
+        document.getElementById('btn-in').disabled = true;
+        document.getElementById('btn-out').disabled = true;
+    }
+
     async function checkLastStatus() {
         const statusBox = document.getElementById('status-info');
         const btnIn = document.getElementById('btn-in');
@@ -116,12 +120,13 @@
                 .get();
 
             if (snapshot.empty) {
-                lastStatus = "ยังไม่เคยบันทึก";
+                statusBox.innerText = `สถานะล่าสุด: ยังไม่เริ่มงาน`;
                 btnIn.disabled = false;
                 btnOut.disabled = true;
             } else {
                 const data = snapshot.docs[0].data();
-                lastStatus = data.type;
+                const lastStatus = data.type;
+                statusBox.innerText = `สถานะล่าสุด: ${lastStatus}`;
                 
                 if (lastStatus === "เข้างาน") {
                     btnIn.disabled = true;
@@ -131,10 +136,9 @@
                     btnOut.disabled = true;
                 }
             }
-            statusBox.innerText = `สถานะล่าสุด: ${lastStatus}`;
         } catch (error) {
             console.error(error);
-            statusBox.innerText = "ไม่สามารถดึงสถานะได้ (กรุณาสร้าง Index ใน Firestore)";
+            statusBox.innerText = "เกิดข้อผิดพลาดในการดึงข้อมูล";
         }
     }
 
@@ -153,10 +157,21 @@
 
         db.collection("attendance_logs").add(entry)
             .then(() => {
-                alert(`บันทึก ${type} สำเร็จ!`);
+                alert(`บันทึก ${type} ของ ${currentUser} สำเร็จ!`);
                 logout();
             })
             .catch((error) => alert("Error: " + error.message));
+    }
+
+    function logout() {
+        currentUser = null;
+        document.getElementById('login-pin').value = '';
+        showPage('page-login');
+    }
+
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
     }
 
     function exportFromFirestore() {
@@ -174,13 +189,6 @@
                 XLSX.writeFile(wb, "Staff_Report.xlsx");
             });
     }
-
-    function showPage(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function logout() { currentUser = null; lastStatus = null; showPage('page-login'); }
 </script>
 </body>
 </html>
