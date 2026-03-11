@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Log - Always Logged In</title>
+    <title>Work Log - Personal History</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -11,20 +11,36 @@
     <style>
         :root { --bg: #f8fafc; --card: #ffffff; --primary: #0f172a; --border: #e2e8f0; --success: #10b981; --error: #ef4444; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 400px; padding: 20px; }
-        .page { display: none; background: var(--card); padding: 32px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        .container { width: 100%; max-width: 420px; padding: 20px; }
+        .page { display: none; background: var(--card); padding: 24px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
         .page.active { display: block; }
+        
         h1 { font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 8px; }
-        .subtitle { color: #64748b; font-size: 0.85rem; text-align: center; margin-bottom: 24px; }
+        .subtitle { color: #64748b; font-size: 0.85rem; text-align: center; margin-bottom: 20px; }
+        
         .input-field { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 12px; text-align: center; font-size: 1.1rem; box-sizing: border-box; }
         .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-main { background: var(--primary); color: white; }
-        .action-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; }
-        .action-btn { background: white; border: 2px solid var(--border); padding: 18px 10px; border-radius: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; border-style: dashed; color: #94a3b8 !important; }
+
+        .current-status-box { background: #f1f5f9; padding: 12px; border-radius: 12px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; color: var(--primary); font-weight: 600; }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .action-btn { background: white; border: 2px solid var(--border); padding: 15px 5px; border-radius: 16px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; border-style: dashed; }
         .action-btn:not(:disabled):hover { border-color: var(--primary); background: #f8fafc; }
-        .current-status-box { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 20px; color: var(--primary); min-height: 1.2em; }
-        .logout-link { display: block; text-align: center; margin-top: 20px; color: #ef4444; font-size: 0.8rem; cursor: pointer; background: none; border: none; width: 100%; text-decoration: underline; }
+
+        /* ส่วนแสดงประวัติ */
+        .history-section { border-top: 1px solid var(--border); pt: 20px; margin-top: 10px; }
+        .history-title { font-size: 0.9rem; font-weight: 600; margin: 15px 0 10px 0; color: var(--primary); }
+        .history-list { font-size: 0.75rem; width: 100%; border-collapse: collapse; }
+        .history-list tr { border-bottom: 1px solid #f1f5f9; }
+        .history-list td { padding: 10px 5px; color: #475569; }
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .tag-in { background: #dcfce7; color: #166534; }
+        .tag-out { background: #fee2e2; color: #991b1b; }
+        .tag-leave { background: #fef3c7; color: #92400e; }
+
+        .logout-link { display: block; text-align: center; margin-top: 25px; color: #ef4444; font-size: 0.8rem; cursor: pointer; background: none; border: none; width: 100%; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -40,23 +56,28 @@
     <div id="page-dashboard" class="page">
         <h1 id="welcome-text">Dashboard</h1>
         <div id="status-info" class="current-status-box">กำลังตรวจสอบสถานะ...</div>
+        
         <div class="action-grid">
-            <button id="btn-in" class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">
-                <span>Check In</span> <span>➜</span>
-            </button>
-            <button id="btn-out" class="action-btn" onclick="record('ออกงาน')" style="color: var(--error)">
-                <span>Check Out</span> <span>➜</span>
-            </button>
-            <button id="btn-leave" class="action-btn" onclick="record('ลา')" style="color: #f59e0b">
-                <span>แจ้งลา (Leave)</span> <span>➜</span>
-            </button>
+            <button id="btn-in" class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In</button>
+            <button id="btn-out" class="action-btn" onclick="record('ออกงาน')" style="color: var(--error)">Check Out</button>
         </div>
+        <button id="btn-leave" class="btn" onclick="record('ลา')" style="background: #fef3c7; color: #92400e; font-size: 0.85rem;">แจ้งลา (Leave Request)</button>
+
+        <div class="history-section">
+            <p class="history-title">ประวัติ 5 รายการล่าสุด</p>
+            <table class="history-list" id="history-table">
+                <tbody id="history-body">
+                    <tr><td colspan="3" style="text-align:center">ไม่พบข้อมูลประวัติ</td></tr>
+                </tbody>
+            </table>
+        </div>
+
         <button class="logout-link" onclick="logout()">ออกจากระบบ (Logout)</button>
     </div>
 
     <div id="page-admin" class="page">
         <h1>Admin Control</h1>
-        <button class="btn btn-main" style="background: #1d6f42;" onclick="exportFromFirestore()">📊 Export to Excel</button>
+        <button class="btn btn-main" style="background: #1d6f42;" onclick="exportFromFirestore()">📊 Export All Data to Excel</button>
         <button class="logout-link" style="color: #64748b" onclick="logout()">Back</button>
     </div>
 </div>
@@ -78,41 +99,37 @@
     
     let currentUser = null;
 
-    // --- ส่วนที่เพิ่มใหม่: ตรวจสอบการล็อกอินค้างไว้เมื่อเปิดหน้าเว็บ ---
     window.onload = function() {
         const savedUser = localStorage.getItem('activeUser');
         if (savedUser) {
             currentUser = savedUser;
-            if (currentUser === 'Admin') {
-                showPage('page-admin');
-            } else {
+            if (currentUser === 'Admin') showPage('page-admin');
+            else {
                 showPage('page-dashboard');
                 document.getElementById('welcome-text').innerText = "สวัสดี, " + currentUser;
-                checkLastStatus();
+                refreshDashboard();
             }
-        } else {
-            showPage('page-login');
-        }
+        } else { showPage('page-login'); }
     };
 
     function handleLogin() {
         const pin = document.getElementById('login-pin').value;
         if (USERS[pin]) {
             currentUser = USERS[pin];
-            // บันทึกชื่อลงเครื่อง
             localStorage.setItem('activeUser', currentUser);
             document.getElementById('login-pin').value = '';
-            
-            if (currentUser === 'Admin') {
-                showPage('page-admin');
-            } else {
+            if (currentUser === 'Admin') showPage('page-admin');
+            else {
                 showPage('page-dashboard');
                 document.getElementById('welcome-text').innerText = "สวัสดี, " + currentUser;
-                checkLastStatus(); 
+                refreshDashboard();
             }
-        } else {
-            alert('PIN ไม่ถูกต้อง');
-        }
+        } else { alert('PIN ไม่ถูกต้อง'); }
+    }
+
+    async function refreshDashboard() {
+        await checkLastStatus();
+        await fetchHistory();
     }
 
     async function checkLastStatus() {
@@ -120,31 +137,49 @@
         const btnIn = document.getElementById('btn-in');
         const btnOut = document.getElementById('btn-out');
 
-        statusBox.innerText = "กำลังตรวจสอบสถานะล่าสุด...";
-        btnIn.disabled = true;
-        btnOut.disabled = true;
-
         try {
             const snapshot = await db.collection("attendance_logs")
                 .where("name", "==", currentUser)
-                .orderBy("timestamp", "desc")
-                .limit(1)
-                .get();
+                .orderBy("timestamp", "desc").limit(1).get();
 
             if (snapshot.empty) {
-                statusBox.innerText = `สถานะล่าสุด: ยังไม่เคยเริ่มงาน`;
-                btnIn.disabled = false;
-                btnOut.disabled = true;
+                statusBox.innerText = `สถานะล่าสุด: ยังไม่เริ่มงาน`;
+                btnIn.disabled = false; btnOut.disabled = true;
             } else {
-                const data = snapshot.docs[0].data();
-                const lastStatus = data.type;
+                const lastStatus = snapshot.docs[0].data().type;
                 statusBox.innerText = `สถานะล่าสุด: ${lastStatus}`;
                 btnIn.disabled = (lastStatus === "เข้างาน");
                 btnOut.disabled = (lastStatus !== "เข้างาน");
             }
-        } catch (error) {
-            statusBox.innerText = "Error: กรุณาสร้าง Index ใน Firestore";
-        }
+        } catch (e) { statusBox.innerText = "Error: กรุณาสร้าง Index"; }
+    }
+
+    async function fetchHistory() {
+        const historyBody = document.getElementById('history-body');
+        try {
+            const snapshot = await db.collection("attendance_logs")
+                .where("name", "==", currentUser)
+                .orderBy("timestamp", "desc").limit(5).get();
+
+            if (snapshot.empty) {
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center">ไม่มีประวัติการทำงาน</td></tr>';
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const typeClass = data.type === 'เข้างาน' ? 'tag-in' : (data.type === 'ออกงาน' ? 'tag-out' : 'tag-leave');
+                html += `
+                    <tr>
+                        <td style="font-weight:600">${data.date}</td>
+                        <td>${data.time} น.</td>
+                        <td style="text-align:right"><span class="tag ${typeClass}">${data.type}</span></td>
+                    </tr>
+                `;
+            });
+            historyBody.innerHTML = html;
+        } catch (e) { console.error(e); }
     }
 
     function record(type) {
@@ -152,29 +187,21 @@
         if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
 
         const entry = {
-            name: currentUser,
-            type: type,
-            date: new Date().toLocaleDateString('th-TH'),
+            name: currentUser, type: type, date: new Date().toLocaleDateString('th-TH'),
             time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-            note: note,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            note: note, timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        db.collection("attendance_logs").add(entry)
-            .then(() => {
-                alert(`บันทึก ${type} สำเร็จ!`);
-                // เมื่อบันทึกเสร็จ ไม่ต้อง logout แล้ว ให้เช็คสถานะใหม่เลย
-                checkLastStatus(); 
-            })
-            .catch((error) => alert("Error: " + error.message));
+        db.collection("attendance_logs").add(entry).then(() => {
+            alert(`บันทึกสำเร็จ!`);
+            refreshDashboard(); 
+        });
     }
 
     function logout() {
-        if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-            currentUser = null;
-            localStorage.removeItem('activeUser'); // ลบค่าที่บันทึกไว้ออก
-            document.getElementById('login-pin').value = '';
-            showPage('page-login');
+        if(confirm("ออกจากระบบใช่หรือไม่?")) {
+            localStorage.removeItem('activeUser');
+            location.reload();
         }
     }
 
@@ -184,19 +211,14 @@
     }
 
     function exportFromFirestore() {
-        db.collection("attendance_logs").orderBy("timestamp", "desc").get()
-            .then((querySnapshot) => {
-                const logs = [];
-                querySnapshot.forEach((doc) => {
-                    const item = doc.data();
-                    logs.push({ "ชื่อพนักงาน": item.name, "กิจกรรม": item.type, "วันที่": item.date, "เวลา": item.time, "หมายเหตุ": item.note });
-                });
-                if (logs.length === 0) return alert('ไม่มีข้อมูล');
-                const ws = XLSX.utils.json_to_sheet(logs);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-                XLSX.writeFile(wb, "Staff_Report.xlsx");
-            });
+        db.collection("attendance_logs").orderBy("timestamp", "desc").get().then((qs) => {
+            const logs = [];
+            qs.forEach(doc => logs.push(doc.data()));
+            const ws = XLSX.utils.json_to_sheet(logs);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+            XLSX.writeFile(wb, "Report.xlsx");
+        });
     }
 </script>
 </body>
