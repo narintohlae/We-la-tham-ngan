@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking - Minimal Edition</title>
+    <title>Time Tracking - Kiosk Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* โทนสีสไตล์ Modern & Minimal */
             --bg-body: #f3f4f6;
             --bg-card: #ffffff;
             --text-main: #1f2937;
             --text-muted: #6b7280;
-            --primary: #3b82f6;      /* Blue */
-            --primary-hover: #2563eb;
-            --success: #10b981;      /* Emerald */
+            --primary: #3b82f6;
+            --success: #10b981;
             --success-hover: #059669;
-            --danger: #ef4444;       /* Red */
+            --danger: #ef4444;
             --danger-hover: #dc2626;
             --excel: #059669;
             --border-light: #e5e7eb;
@@ -48,20 +46,12 @@
 
         h1, h2, h3 { color: var(--text-main); text-align: center; margin-top: 0; font-weight: 600; }
         
-        /* สไตล์นาฬิกาใหม่ */
         .clock-container { text-align: center; margin-bottom: 30px; }
         .clock-time { font-size: 3rem; font-weight: 600; color: var(--primary); letter-spacing: 2px; line-height: 1; }
         .clock-date { font-size: 1rem; color: var(--text-muted); margin-top: 8px; font-weight: 300; }
         
-        /* ปุ่มเลือกพนักงาน */
         .section-title { text-align: center; margin-bottom: 15px; color: var(--text-muted); font-size: 0.95em; font-weight: 400; }
-        .employee-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
+        .employee-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 30px; }
         .emp-btn {
             background-color: #f9fafb;
             color: var(--text-main);
@@ -84,7 +74,7 @@
             font-weight: 500;
         }
 
-        /* ฟอร์มและ Input */
+        /* Input & Numpad */
         .input-group { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
         input {
             font-family: 'Prompt', sans-serif;
@@ -95,24 +85,56 @@
             flex: 1;
             min-width: 150px;
             background-color: #f9fafb;
-            transition: all 0.2s;
             outline: none;
         }
-        input:focus { border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        input[type="password"] {
-            text-align: center;
-            letter-spacing: 8px;
-            font-size: 1.4em;
-            font-weight: 600;
-            max-width: 250px;
-        }
         
-        /* ปุ่มต่างๆ */
+        /* ช่องใส่ PIN สำหรับพนักงาน (ทำให้กดพิมพ์จากคีย์บอร์ดไม่ได้ เพื่อใช้ Numpad แทน) */
+        input#empPin {
+            text-align: center;
+            letter-spacing: 12px;
+            font-size: 1.8em;
+            font-weight: 600;
+            max-width: 280px;
+            background-color: #fff;
+            border: 2px solid var(--border-light);
+            color: var(--primary);
+        }
+
+        /* ตารางปุ่มตัวเลข Numpad */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 280px;
+            margin: 0 auto 30px auto;
+        }
+        .num-btn {
+            background-color: #f9fafb;
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 18px 0;
+            font-size: 1.5em;
+            font-weight: 500;
+            font-family: 'Prompt', sans-serif;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .num-btn:active {
+            background-color: var(--border-light);
+            transform: scale(0.95);
+        }
+        .num-btn-del { color: var(--danger); background-color: #fee2e2; border-color: #fca5a5; }
+
+        /* ปุ่ม Action */
         .action-btn {
-            padding: 16px 30px;
-            font-size: 1.1em;
+            padding: 18px 30px;
+            font-size: 1.2em;
             border: none;
-            border-radius: 12px;
+            border-radius: 16px;
             cursor: pointer;
             color: white;
             font-weight: 500;
@@ -130,33 +152,19 @@
         .btn-out { background-color: var(--danger); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
         .btn-out:hover { background-color: var(--danger-hover); transform: translateY(-2px); }
         
-        .btn-text-link {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-family: 'Prompt', sans-serif;
-            font-size: 0.9em;
-            text-decoration: underline;
-            padding: 10px;
-            width: 100%;
-            margin-top: 20px;
-            transition: color 0.2s;
-        }
+        .btn-text-link { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: 'Prompt', sans-serif; font-size: 0.9em; text-decoration: underline; padding: 10px; width: 100%; margin-top: 20px; transition: color 0.2s; }
         .btn-text-link:hover { color: var(--text-main); }
         
         .btn-add { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-family: 'Prompt'; }
         .btn-excel { background-color: var(--excel); color: white; width: 100%; margin-top: 10px; padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-size: 1em; font-family: 'Prompt'; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* ตารางสไตล์มินิมอล */
+        /* ตาราง Admin */
         .admin-section { border: 1px solid var(--border-light); padding: 25px; border-radius: 16px; margin-bottom: 24px; background: #fff; }
         .filters { display: flex; gap: 10px; background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--border-light);}
-        
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; font-size: 0.95em; }
         th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid var(--border-light); }
-        th { color: var(--text-muted); font-weight: 500; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-light); }
+        th { color: var(--text-muted); font-weight: 500; font-size: 0.9em; text-transform: uppercase; border-bottom: 2px solid var(--border-light); }
         tr:last-child td { border-bottom: none; }
-        
         .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
         .status-in { background-color: #fef3c7; color: #d97706; }
         .status-out { background-color: #d1fae5; color: #059669; }
@@ -176,22 +184,41 @@
 
         <div class="divider"></div>
 
-        <div class="section-title">เลือกชื่อเพื่อบันทึกเวลา</div>
+        <div class="section-title">1. เลือกชื่อของคุณ</div>
         <div id="employeeGrid" class="employee-grid">
             </div>
 
         <input type="hidden" id="empName" value="">
 
+        <div class="section-title">2. ใส่รหัส PIN 4 หลัก</div>
         <div class="input-group">
-            <input type="password" id="empPin" placeholder="PIN" maxlength="4">
+            <input type="password" id="empPin" placeholder="----" maxlength="4" readonly>
         </div>
+
+        <div class="numpad">
+            <button class="num-btn" onclick="pressNum('1')">1</button>
+            <button class="num-btn" onclick="pressNum('2')">2</button>
+            <button class="num-btn" onclick="pressNum('3')">3</button>
+            <button class="num-btn" onclick="pressNum('4')">4</button>
+            <button class="num-btn" onclick="pressNum('5')">5</button>
+            <button class="num-btn" onclick="pressNum('6')">6</button>
+            <button class="num-btn" onclick="pressNum('7')">7</button>
+            <button class="num-btn" onclick="pressNum('8')">8</button>
+            <button class="num-btn" onclick="pressNum('9')">9</button>
+            <button class="num-btn num-btn-del" onclick="clearNum()">C</button>
+            <button class="num-btn" onclick="pressNum('0')">0</button>
+            <button class="num-btn num-btn-del" onclick="deleteNum()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
+            </button>
+        </div>
+
         <div class="input-group">
             <button class="action-btn btn-in" onclick="handleClock('in')">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                 เข้างาน
             </button>
             <button class="action-btn btn-out" onclick="handleClock('out')">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 ออกงาน
             </button>
         </div>
@@ -252,7 +279,7 @@
         localStorage.setItem('employees_v2', JSON.stringify(employees));
     }
 
-    // --- ระบบเวลา (แยกวันที่และเวลา) ---
+    // --- ระบบเวลา ---
     function updateClock() {
         const now = new Date();
         const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
@@ -280,10 +307,29 @@
         document.getElementById('empName').value = name;
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-emp-${name}`).classList.add('active');
-        document.getElementById('empPin').focus();
+        
+        // เคลียร์รหัส PIN เก่าทิ้งทุกครั้งที่เปลี่ยนชื่อคน
+        document.getElementById('empPin').value = '';
     }
 
     renderEmployeeButtons();
+
+    // ================= ระบบแป้นพิมพ์ตัวเลข (Numpad) =================
+    function pressNum(num) {
+        const pinInput = document.getElementById('empPin');
+        if (pinInput.value.length < 4) {
+            pinInput.value += num;
+        }
+    }
+
+    function deleteNum() {
+        const pinInput = document.getElementById('empPin');
+        pinInput.value = pinInput.value.slice(0, -1);
+    }
+
+    function clearNum() {
+        document.getElementById('empPin').value = '';
+    }
 
     // ================= ส่วนของพนักงาน =================
     function handleClock(type) {
@@ -291,27 +337,36 @@
         const pin = document.getElementById('empPin').value.trim();
 
         if (!name) return alert('กรุณาเลือกชื่อของคุณก่อนครับ');
-        if (!pin) return alert('กรุณาใส่รหัส PIN 4 หลักครับ');
+        if (pin.length !== 4) return alert('กรุณาใส่รหัส PIN ให้ครบ 4 หลักครับ');
 
         const validEmp = employees.find(e => e.name === name && e.pin === pin);
-        if (!validEmp) return alert('รหัส PIN ไม่ถูกต้อง!');
+        if (!validEmp) {
+            clearNum(); // ถ้ารหัสผิด ให้ล้างช่องรหัสให้กรอกใหม่
+            return alert('รหัส PIN ไม่ถูกต้อง!');
+        }
 
         const activeRecordIndex = records.findIndex(r => r.name === name && !r.timeOut);
         const now = new Date().toISOString();
 
         if (type === 'in') {
-            if (activeRecordIndex > -1) return alert('คุณได้บันทึกเข้างานไปแล้วครับ');
+            if (activeRecordIndex > -1) {
+                clearNum();
+                return alert('คุณได้บันทึกเข้างานไปแล้วครับ');
+            }
             records.push({ id: Date.now(), name: name, timeIn: now, timeOut: null });
             alert(`เข้างานสำเร็จ: ${name}`);
         } else if (type === 'out') {
-            if (activeRecordIndex === -1) return alert('ยังไม่ได้บันทึกเข้างานครับ');
+            if (activeRecordIndex === -1) {
+                clearNum();
+                return alert('ยังไม่ได้บันทึกเข้างานครับ');
+            }
             records[activeRecordIndex].timeOut = now;
             alert(`ออกงานสำเร็จ: ${name}`);
         }
 
         saveData();
         document.getElementById('empName').value = ''; 
-        document.getElementById('empPin').value = '';  
+        clearNum();  
         document.querySelectorAll('.emp-btn').forEach(btn => btn.classList.remove('active'));
     }
 
