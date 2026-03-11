@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Log - Cloud Firestore</title>
+    <title>Work Log - Strict Mode</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #f8fafc; --card: #ffffff; --primary: #0f172a; --border: #e2e8f0; --success: #10b981; }
+        :root { --bg: #f8fafc; --card: #ffffff; --primary: #0f172a; --border: #e2e8f0; --success: #10b981; --error: #ef4444; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 400px; padding: 20px; }
         .page { display: none; background: var(--card); padding: 32px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
@@ -19,9 +19,15 @@
         .input-field { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 12px; text-align: center; font-size: 1.1rem; box-sizing: border-box; }
         .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-main { background: var(--primary); color: white; }
-        .action-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; } /* ปรับเป็นคอลัมน์เดียวหรือคู่ตามความสวยงาม */
-        .action-btn { background: white; border: 1px solid var(--border); padding: 18px 10px; border-radius: 16px; font-weight: 600; cursor: pointer; }
-        .action-btn:hover { border-color: var(--primary); background: #f8fafc; }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; }
+        .action-btn { background: white; border: 2px solid var(--border); padding: 18px 10px; border-radius: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* สไตล์เมื่อปุ่มถูกปิดใช้งาน */
+        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; border-style: dashed; }
+        .action-btn:not(:disabled):hover { border-color: var(--primary); background: #f8fafc; }
+        
+        .current-status-box { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 20px; color: var(--primary); }
         .logout-link { display: block; text-align: center; margin-top: 20px; color: #64748b; font-size: 0.8rem; cursor: pointer; background: none; border: none; width: 100%; text-decoration: underline; }
     </style>
 </head>
@@ -30,17 +36,25 @@
 <div class="container">
     <div id="page-login" class="page active">
         <h1>Cloud Login</h1>
-        <p class="subtitle">ระบบบันทึกเวลาทำงาน</p>
-        <input type="password" id="login-pin" class="input-field" placeholder="กรอก PIN" maxlength="4">
-        <button class="btn btn-main" onclick="handleLogin()">เข้าสู่ระบบ</button>
+        <p class="subtitle">ระบุ PIN เพื่อเข้างาน</p>
+        <input type="password" id="login-pin" class="input-field" placeholder="PIN" maxlength="4">
+        <button class="btn btn-main" onclick="handleLogin()">Sign In</button>
     </div>
 
     <div id="page-dashboard" class="page">
         <h1 id="welcome-text">Dashboard</h1>
+        <div id="status-info" class="current-status-box">กำลังตรวจสอบสถานะล่าสุด...</div>
+        
         <div class="action-grid">
-            <button class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">Check In (เข้างาน)</button>
-            <button class="action-btn" onclick="record('ออกงาน')" style="color: #ef4444">Check Out (ออกงาน)</button>
-            <button class="action-btn" onclick="record('ลา')" style="color: #f59e0b">Leave (แจ้งลา)</button>
+            <button id="btn-in" class="action-btn" onclick="record('เข้างาน')" style="color: var(--success)">
+                <span>Check In</span> <span>➜</span>
+            </button>
+            <button id="btn-out" class="action-btn" onclick="record('ออกงาน')" style="color: var(--error)">
+                <span>Check Out</span> <span>➜</span>
+            </button>
+            <button id="btn-leave" class="action-btn" onclick="record('ลา')" style="color: #f59e0b">
+                <span>แจ้งลา (Leave)</span> <span>➜</span>
+            </button>
         </div>
         <button class="logout-link" onclick="logout()">Logout</button>
     </div>
@@ -68,24 +82,65 @@
 
     const USERS = { "1234": "Jantra", "5678": "Panwasa", "9999": "Admin" };
     let currentUser = null;
+    let lastStatus = null;
 
-    function handleLogin() {
+    async function handleLogin() {
         const pin = document.getElementById('login-pin').value;
         if (USERS[pin]) {
             currentUser = USERS[pin];
             document.getElementById('login-pin').value = '';
-            showPage(currentUser === 'Admin' ? 'page-admin' : 'page-dashboard');
-            if(currentUser !== 'Admin') document.getElementById('welcome-text').innerText = "สวัสดี, " + currentUser;
+            
+            if (currentUser === 'Admin') {
+                showPage('page-admin');
+            } else {
+                showPage('page-dashboard');
+                document.getElementById('welcome-text').innerText = "สวัสดี, " + currentUser;
+                await checkLastStatus(); // ตรวจสอบสถานะก่อนให้กดปุ่ม
+            }
         } else {
             alert('PIN ไม่ถูกต้อง');
         }
     }
 
+    // ฟังก์ชันตรวจสอบสถานะล่าสุดจาก Firestore
+    async function checkLastStatus() {
+        const statusBox = document.getElementById('status-info');
+        const btnIn = document.getElementById('btn-in');
+        const btnOut = document.getElementById('btn-out');
+
+        try {
+            const snapshot = await db.collection("attendance_logs")
+                .where("name", "==", currentUser)
+                .orderBy("timestamp", "desc")
+                .limit(1)
+                .get();
+
+            if (snapshot.empty) {
+                lastStatus = "ยังไม่เคยบันทึก";
+                btnIn.disabled = false;
+                btnOut.disabled = true;
+            } else {
+                const data = snapshot.docs[0].data();
+                lastStatus = data.type;
+                
+                if (lastStatus === "เข้างาน") {
+                    btnIn.disabled = true;
+                    btnOut.disabled = false;
+                } else {
+                    btnIn.disabled = false;
+                    btnOut.disabled = true;
+                }
+            }
+            statusBox.innerText = `สถานะล่าสุด: ${lastStatus}`;
+        } catch (error) {
+            console.error(error);
+            statusBox.innerText = "ไม่สามารถดึงสถานะได้ (กรุณาสร้าง Index ใน Firestore)";
+        }
+    }
+
     function record(type) {
         let note = "-";
-        if (type === 'ลา') {
-            note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
-        }
+        if (type === 'ลา') note = prompt("ระบุสาเหตุการลา:") || "ไม่ระบุ";
 
         const entry = {
             name: currentUser,
@@ -98,12 +153,10 @@
 
         db.collection("attendance_logs").add(entry)
             .then(() => {
-                alert('บันทึกข้อมูลสำเร็จ!');
+                alert(`บันทึก ${type} สำเร็จ!`);
                 logout();
             })
-            .catch((error) => {
-                alert("เกิดข้อผิดพลาด: " + error.message);
-            });
+            .catch((error) => alert("Error: " + error.message));
     }
 
     function exportFromFirestore() {
@@ -112,24 +165,13 @@
                 const logs = [];
                 querySnapshot.forEach((doc) => {
                     const item = doc.data();
-                    logs.push({
-                        "ชื่อพนักงาน": item.name,
-                        "กิจกรรม": item.type,
-                        "วันที่": item.date,
-                        "เวลา": item.time,
-                        "หมายเหตุ": item.note
-                    });
+                    logs.push({ "ชื่อพนักงาน": item.name, "กิจกรรม": item.type, "วันที่": item.date, "เวลา": item.time, "หมายเหตุ": item.note });
                 });
-
                 if (logs.length === 0) return alert('ไม่มีข้อมูล');
-
                 const ws = XLSX.utils.json_to_sheet(logs);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Attendance");
                 XLSX.writeFile(wb, "Staff_Report.xlsx");
-            })
-            .catch((error) => {
-                alert("Error: " + error.message);
             });
     }
 
@@ -138,7 +180,7 @@
         document.getElementById(id).classList.add('active');
     }
 
-    function logout() { currentUser = null; showPage('page-login'); }
+    function logout() { currentUser = null; lastStatus = null; showPage('page-login'); }
 </script>
 </body>
 </html>
